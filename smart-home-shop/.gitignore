@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+
+# Runtime and temp artifacts
+tmp/
+tmp_*
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Playwright artifacts
+playwright-report/
+test-results/
+reports/
+
+# Local editor/system files
+.DS_Store
+Thumbs.db
+.vscode/
+.githooks/
+
+# SQLite volatile files
+data/*.db-shm
+data/*.db-wal
+
+# Local backups and generated reports
+data/*.bak*
+reports/encoding-hygiene-report.json
+data/import/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Accidental local backups
+*.bak
+*.bak_*
+*.orig
+
+# Root-level one-off migration/debug helpers (should live in scripts/ if needed)
+/add_*.js
+/check_*.js
+/check_*.py
+/debug_*.js
+/extract_*.py
+/extract_*.js
+/fix_*.js
+/merge_to_*.js
+/parse_*.js
+/reorganize_*.js
+/scrape_*.js
+/update_*.js
+/rollback_*.js
+/restore_*.js
+/rebuild_*.js
+/apply_old_design_update.js
+/update_old_design.js
+/create_categories_table.js
+
+# Local source catalog artifact
+/larnitech_catalogue_04_23_web.pdf
+
+# Local contract drafts in project root
+/contract_*.md
