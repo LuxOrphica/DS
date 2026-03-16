@@ -1,10 +1,13 @@
 import { BRAND_STANDARD_SUBCATEGORIES, PLACEHOLDER_IMAGE } from "./config.js";
-import { slugify, pageTitle, imageTag, searchRow, productMatchesSearch, resetFacetFilters, normalizeMeasurementValue } from "./utils.js";
-import { renderProductCard, getUnifiedBrandSubcategory, getProductBrand } from "./products.js";
+import { slugify, pageTitle, imageTag, searchRow, productMatchesSearch, normalizeMeasurementValue, applySafeHtml, fixMojibake, getProductPriceView, favoriteIconMarkup } from "./utils.js";
+import { renderProductCard, getUnifiedBrandSubcategory, getProductBrand, rebalanceProductCardMedia, bindProductCardGalleries } from "./products.js";
 import { isFavorite, toggleFavorite } from "./favorites.js";
+import { addToCart, syncCardBuyBadges } from "./cart.js";
+import { getCategoryFacetProfile, applyFacetProfile } from "./facet-profiles.js";
+import { createFacetHelpers } from "./facet-utils.js";
 
 const HIDDEN_BRAND_KEYS = new Set([
-  "делаем сети"
+  "\u0434\u0435\u043b\u0430\u0435\u043c \u0441\u0435\u0442\u0438"
 ]);
 
 const BRAND_LOGO_BY_NAME = new Map([
@@ -26,30 +29,74 @@ const BRAND_LOGO_CLASS_BY_NAME = new Map([
 ]);
 
 const LARNITECH_NATIVE_SECTIONS = [
-  "Серия Metaforsa",
-  "DIN-реечное оборудование",
-  "Оборудование для подрозетных коробок",
-  "Датчики",
+  "\u0421\u0435\u0440\u0438\u044f Metaforsa",
+  "DIN-\u0440\u0435\u0435\u0447\u043d\u043e\u0435 \u043e\u0431\u043e\u0440\u0443\u0434\u043e\u0432\u0430\u043d\u0438\u0435",
+  "\u041e\u0431\u043e\u0440\u0443\u0434\u043e\u0432\u0430\u043d\u0438\u0435 \u0434\u043b\u044f \u043f\u043e\u0434\u0440\u043e\u0437\u0435\u0442\u043d\u044b\u0445 \u043a\u043e\u0440\u043e\u0431\u043e\u043a",
+  "\u0414\u0430\u0442\u0447\u0438\u043a\u0438",
   "Multiroom",
   "Wireless",
-  "Прочее"
+  "\u041f\u0440\u043e\u0447\u0435\u0435"
 ];
 
 const HITE_PRO_NATIVE_SECTIONS = [
-  "Радиовыключатели",
-  "Блоки управления",
-  "Датчики",
-  "Сервер умного дома",
-  "Комплекты",
-  "Умные замки",
-  "Сопутствующие товары",
-  "Системы усиления 3G/4G",
-  "Реле и диммеры",
-  "Контроллеры",
-  "Аксессуары",
-  "Термостаты",
-  "Прочее"
+  "\u0418\u0441\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c\u043d\u044b\u0435 \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0430",
+  "\u0411\u043b\u043e\u043a\u0438 \u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044f",
+  "\u0414\u0430\u0442\u0447\u0438\u043a\u0438",
+  "\u0423\u043c\u043d\u044b\u0439 \u0434\u043e\u043c \u043f\u043e\u0434 \u043a\u043b\u044e\u0447",
+  "\u041a\u043e\u043c\u043f\u043b\u0435\u043a\u0442\u044b",
+  "\u0423\u043c\u043d\u044b\u0435 \u0437\u0430\u043c\u043a\u0438",
+  "\u0410\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0438\u0435 \u0432\u043e\u0440\u043e\u0442\u0430",
+  "\u0423\u0441\u0438\u043b\u0438\u0442\u0435\u043b\u0438 \u0441\u0438\u0433\u043d\u0430\u043b\u0430 3G/4G",
+  "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b",
+  "\u041a\u043e\u043d\u0442\u0440\u043e\u043b\u043b\u0435\u0440\u044b",
+  "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b",
+  "\u0422\u0435\u0440\u043c\u043e\u0441\u0442\u0430\u0442\u044b",
+  "\u041f\u0440\u043e\u0447\u0435\u0435"
 ];
+
+const LOXONE_NATIVE_SECTIONS = [
+  "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b",
+  "\u0410\u0443\u0434\u0438\u043e / Multiroom",
+  "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b",
+  "\u042d\u043d\u0435\u0440\u0433\u043e\u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433",
+  "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"
+];
+
+const LOXONE_SECTION_BY_SUBCATEGORY = new Map([
+  ["\u0430\u0443\u0434\u0438\u043e", "\u0410\u0443\u0434\u0438\u043e / Multiroom"],
+  ["\u0430\u043a\u0443\u0441\u0442\u0438\u043a\u0430", "\u0410\u0443\u0434\u0438\u043e / Multiroom"],
+  ["multiroom", "\u0410\u0443\u0434\u0438\u043e / Multiroom"],
+
+  ["\u043c\u0438\u043d\u0438\u0441\u0435\u0440\u0432\u0435\u0440\u044b \u0438 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043d\u0438\u044f", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
+  ["\u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u0435", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
+  ["\u0440\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
+  ["\u0432\u044b\u043a\u043b\u044e\u0447\u0430\u0442\u0435\u043b\u0438 \u0438 \u043f\u0430\u043d\u0435\u043b\u0438", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
+  ["\u043a\u043e\u043d\u0442\u0440\u043e\u043b\u043b\u0435\u0440\u044b \u043e\u0441\u0432\u0435\u0449\u0435\u043d\u0438\u044f", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
+  ["led-\u043b\u0435\u043d\u0442\u044b", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
+  ["\u0441\u0432\u0435\u0442\u0438\u043b\u044c\u043d\u0438\u043a\u0438", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
+  ["\u0448\u0442\u043e\u0440\u044b", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
+  ["\u0441\u043e\u0444\u0442 \u0438 \u0441\u0435\u0440\u0432\u0438\u0441\u044b", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
+
+  ["\u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433 \u044d\u043d\u0435\u0440\u0433\u0438\u0438", "\u042d\u043d\u0435\u0440\u0433\u043e\u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433"],
+  ["\u0441\u0447\u0435\u0442\u0447\u0438\u043a\u0438", "\u042d\u043d\u0435\u0440\u0433\u043e\u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433"],
+  ["\u0440\u0435\u043b\u0435 \u043d\u0430\u0433\u0440\u0443\u0437\u043a\u0438", "\u042d\u043d\u0435\u0440\u0433\u043e\u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433"],
+  ["\u0431\u043b\u043e\u043a\u0438 \u043f\u0438\u0442\u0430\u043d\u0438\u044f", "\u042d\u043d\u0435\u0440\u0433\u043e\u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433"],
+
+  ["\u0434\u0430\u0442\u0447\u0438\u043a\u0438", "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"],
+  ["\u0434\u0430\u0442\u0447\u0438\u043a\u0438 \u043a\u043b\u0438\u043c\u0430\u0442\u0430", "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"],
+  ["\u043a\u043e\u043d\u0442\u0440\u043e\u043b\u044c \u0434\u043e\u0441\u0442\u0443\u043f\u0430", "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"],
+  ["\u043a\u043d\u043e\u043f\u043a\u0438 \u0438 \u0431\u0440\u0435\u043b\u043e\u043a\u0438", "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"],
+  ["\u0441\u0438\u0440\u0435\u043d\u044b \u0438 \u0442\u0440\u0435\u0432\u043e\u0436\u043d\u044b\u0435 \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0430", "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"],
+  ["\u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u0435 \u043a\u043e\u043d\u0434\u0438\u0446\u0438\u043e\u043d\u0435\u0440\u0430\u043c\u0438", "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"],
+  ["\u043a\u043e\u043d\u0442\u0440\u043e\u043b\u043b\u0435\u0440\u044b \u043a\u043b\u0438\u043c\u0430\u0442\u0430", "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"],
+  ["\u043f\u0440\u0438\u0432\u043e\u0434\u044b \u0438 \u043a\u043b\u0430\u043f\u0430\u043d\u044b", "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"],
+
+  ["\u0430\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b", "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b"],
+  ["\u043a\u0430\u0431\u0435\u043b\u0438 \u0438 \u043f\u0435\u0440\u0435\u0445\u043e\u0434\u043d\u0438\u043a\u0438", "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b"],
+  ["\u043a\u043b\u0435\u043c\u043c\u044b \u0438 \u043a\u043e\u043d\u043d\u0435\u043a\u0442\u043e\u0440\u044b", "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b"],
+  ["\u043a\u0440\u0435\u043f\u0435\u0436 \u0438 \u043c\u043e\u043d\u0442\u0430\u0436", "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b"],
+  ["\u0430\u043d\u0442\u0435\u043d\u043d\u044b", "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b"]
+]);
 
 function normalizeBrandKey(raw) {
   return String(raw || "")
@@ -69,6 +116,10 @@ function normalizeBrandFacetValue(raw) {
   if (key.includes("loxone")) return "Loxone";
   if (key.includes("wiren")) return "Wiren Board";
   return value;
+}
+
+function safeText(value) {
+  return fixMojibake(String(value || "").trim());
 }
 
 function subcategoryRouteToken(subcategory) {
@@ -109,6 +160,10 @@ function isWirenBoardBrand(brandName) {
   return b.includes("wiren board") || b.includes("wirenboard");
 }
 
+function isLoxoneBrand(brandName) {
+  return normalizeBrandKey(brandName).includes("loxone");
+}
+
 function getGroupTail(product) {
   const raw = String((product && (product.group || product.group_name || "")) || "").trim();
   if (!raw) return "";
@@ -120,7 +175,7 @@ function getLarnitechNativeSubcategory(product) {
   const articleRaw = String((product && (product.article || product.id)) || "");
   const article = normalizeSku(articleRaw);
   const name = String((product && product.name) || "").toUpperCase();
-  const isSensorByName = /ДАТЧИК|SENSOR|SENSORS|TEMPERATURE|HUMIDITY|CO2|MOTION|LEAK/i.test(name);
+  const isSensorByName = /\u0414\u0410\u0422\u0427\u0418\u041a|SENSOR|SENSORS|TEMPERATURE|HUMIDITY|CO2|MOTION|LEAK/i.test(name);
   const isExplicitSensorSku = (
     article.startsWith("CW") ||
     article.startsWith("WW") ||
@@ -147,13 +202,13 @@ function getLarnitechNativeSubcategory(product) {
     article === "DWHT05" ||
     name.includes("METAFORSA")
   ) {
-    return "Серия Metaforsa";
+    return "\u0421\u0435\u0440\u0438\u044f Metaforsa";
   }
 
-  if (article.startsWith("BW")) return "Оборудование для подрозетных коробок";
+  if (article.startsWith("BW")) return "\u041e\u0431\u043e\u0440\u0443\u0434\u043e\u0432\u0430\u043d\u0438\u0435 \u0434\u043b\u044f \u043f\u043e\u0434\u0440\u043e\u0437\u0435\u0442\u043d\u044b\u0445 \u043a\u043e\u0440\u043e\u0431\u043e\u043a";
 
   if (isExplicitSensorSku || isSensorByName) {
-    return "Датчики";
+    return "\u0414\u0430\u0442\u0447\u0438\u043a\u0438";
   }
 
   if (article.startsWith("FEMP") || article.startsWith("FEIC") || article === "LCP") {
@@ -170,9 +225,9 @@ function getLarnitechNativeSubcategory(product) {
     return "Wireless";
   }
 
-  if (article.startsWith("DE") || article.startsWith("DW")) return "DIN-реечное оборудование";
+  if (article.startsWith("DE") || article.startsWith("DW")) return "DIN-\u0440\u0435\u0435\u0447\u043d\u043e\u0435 \u043e\u0431\u043e\u0440\u0443\u0434\u043e\u0432\u0430\u043d\u0438\u0435";
 
-  return "Прочее";
+  return "\u041f\u0440\u043e\u0447\u0435\u0435";
 }
 
 function getHiteProNativeSubcategory(product) {
@@ -183,17 +238,50 @@ function getHiteProNativeSubcategory(product) {
   const group = String((product && (product.group || product.group_name || "")) || "").toLowerCase();
   const hay = `${name} ${group}`;
 
-  if (/\bsensor\b|\bdatchik\b|датчик/.test(hay)) return "Датчики";
-  if (/\bkit\b|комплект/.test(hay)) return "Комплекты";
-  if (/\bswitch\b|выключател/.test(hay)) return "Радиовыключатели";
-  if (/\bgateway\b|\bserver\b|сервер|шлюз/.test(hay)) return "Сервер умного дома";
-  if (/\brelay\b|реле|диммер/.test(hay)) return "Блоки управления";
-  return "Прочее";
+  if (/\bsensor\b|\bdatchik\b|датчик/.test(hay)) return "\u0414\u0430\u0442\u0447\u0438\u043a\u0438";
+  if (/\bkit\b|комплект/.test(hay)) return "\u041a\u043e\u043c\u043f\u043b\u0435\u043a\u0442\u044b";
+  if (/\bswitch\b|исполнительн/.test(hay)) return "\u0418\u0441\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c\u043d\u044b\u0435 \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0430";
+  if (/\bgateway\b|\bserver\b|шлюз|сервер/.test(hay)) return "\u0423\u043c\u043d\u044b\u0439 \u0434\u043e\u043c \u043f\u043e\u0434 \u043a\u043b\u044e\u0447";
+  if (/\brelay\b|реле|диммер/.test(hay)) return "\u0411\u043b\u043e\u043a\u0438 \u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044f";
+  return "\u041f\u0440\u043e\u0447\u0435\u0435";
+}
+
+function getLoxoneNativeSubcategory(product) {
+  const stored = safeText(String((product && product.brandSubcategory) || ""));
+  if (stored && LOXONE_NATIVE_SECTIONS.includes(stored)) return stored;
+
+  const tail = safeText(getGroupTail(product));
+  const top = safeText(String((product && (product.topCategory || product.category || product.commercialGroup || product.commercial_group)) || ""));
+  const sub = safeText(String((product && (product.subCategory || product.subcategory || product.commercialSubgroup || product.commercial_subgroup || product.group_name)) || ""));
+  const name = safeText(String((product && product.name) || ""));
+
+  const mappedStored = LOXONE_SECTION_BY_SUBCATEGORY.get(stored.toLowerCase());
+  if (mappedStored) return mappedStored;
+  const mappedTail = LOXONE_SECTION_BY_SUBCATEGORY.get(tail.toLowerCase());
+  if (mappedTail) return mappedTail;
+  const mappedSub = LOXONE_SECTION_BY_SUBCATEGORY.get(sub.toLowerCase());
+  if (mappedSub) return mappedSub;
+  const mappedTop = LOXONE_SECTION_BY_SUBCATEGORY.get(top.toLowerCase());
+  if (mappedTop) return mappedTop;
+
+  const hay = [stored, tail, top, sub, name]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  const hasAny = (tokens) => tokens.some((token) => hay.includes(String(token).toLowerCase()));
+  if (hasAny(["audio", "multiroom", "акустик", "колонк", "speaker", "amplifier"])) return "\u0410\u0443\u0434\u0438\u043e / Multiroom";
+  if (hasAny(["энерго", "счетчик", "meter", "monitor", "реле нагрузки", "power"])) return "\u042d\u043d\u0435\u0440\u0433\u043e\u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433";
+  if (hasAny(["датчик", "sensor", "nfc", "доступ", "intercom", "брелок", "сирен", "alarm"])) return "\u0414\u0430\u0442\u0447\u0438\u043a\u0438";
+  if (hasAny(["минисервер", "расширен", "extension", "контроллер", "управлен", "dali", "relay", "диммер", "выключ", "led", "освещ", "штор"])) return "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b";
+  if (hasAny(["аксесс", "кабел", "клемм", "крепеж", "антенн", "sd карт", "card"])) return "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b";
+  return "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b";
 }
 
 export function getBrandSubcategory(brandName, product) {
   if (isLarnitechBrand(brandName)) return getLarnitechNativeSubcategory(product);
   if (isHiteProBrand(brandName)) return getHiteProNativeSubcategory(product);
+  if (isLoxoneBrand(brandName)) return getLoxoneNativeSubcategory(product);
   if (isWirenBoardBrand(brandName)) {
     const stored = String((product && product.brandSubcategory) || "").trim();
     if (stored) return stored;
@@ -211,6 +299,10 @@ function getBrandSubcategories(brandName, products) {
   if (isHiteProBrand(brandName)) {
     const present = new Set((products || []).map((p) => getBrandSubcategory(brandName, p)));
     return HITE_PRO_NATIVE_SECTIONS.filter((x) => present.has(x));
+  }
+  if (isLoxoneBrand(brandName)) {
+    const present = new Set((products || []).map((p) => getBrandSubcategory(brandName, p)));
+    return LOXONE_NATIVE_SECTIONS.filter((x) => present.has(x));
   }
   return Array.from(new Set((products || []).map((p) => getBrandSubcategory(brandName, p)).filter(Boolean)));
 }
@@ -243,118 +335,157 @@ function getBrandLogoClass(brand) {
   return "brand-logo";
 }
 
-function splitMulti(raw) {
-  return String(raw || "")
-    .split(",")
-    .map((x) => x.trim())
-    .filter(Boolean);
-}
-
-function countSingle(items, getter) {
-  const map = new Map();
-  for (const item of items) {
-    const value = String(getter(item) || "").trim();
-    if (!value) continue;
-    map.set(value, (map.get(value) || 0) + 1);
-  }
-  return Array.from(map.entries())
-    .map(([value, count]) => ({ value, count }))
-    .sort((a, b) => a.value.localeCompare(b.value, "ru"));
-}
-
-function countMulti(items, getter) {
-  const map = new Map();
-  for (const item of items) {
-    for (const value of splitMulti(getter(item))) {
-      map.set(value, (map.get(value) || 0) + 1);
-    }
-  }
-  return Array.from(map.entries())
-    .map(([value, count]) => ({ value, count }))
-    .sort((a, b) => a.value.localeCompare(b.value, "ru"));
-}
-
-function matchesSingle(raw, selectedSet) {
-  if (selectedSet.size === 0) return true;
-  const value = String(raw || "").trim();
-  return value ? selectedSet.has(value) : false;
-}
-
-function matchesMulti(raw, selectedSet) {
-  if (selectedSet.size === 0) return true;
-  return splitMulti(raw).some((value) => selectedSet.has(value));
-}
-
-function matchesMultiAll(raw, selectedSet) {
-  if (selectedSet.size === 0) return true;
-  const own = new Set(splitMulti(raw));
-  for (const value of selectedSet) {
-    if (!own.has(value)) return false;
-  }
-  return true;
-}
-
-function renderCheckGroup(title, key, options, selectedSet) {
-  if (!options.length) return "";
-  const formatFacetValue = (facetKey, value) => {
-    const v = String(value || "").trim();
-    if (!v) return v;
-    const map = {
-      wireless: "беспроводная",
-      wall: "настенный",
-      recessed: "подрозетник",
-      surface: "накладной",
-      indoor: "внутренний",
-      outdoor: "уличный",
-      yes: "да",
-      relay: "релейная",
-      dimmable: "диммируемая",
-      motion: "движение",
-      leak: "протечка",
-      "temp/humidity": "температура/влажность",
-      "open/close": "открытие/закрытие"
-    };
-    const direct = map[v.toLowerCase()];
-    if (direct) return direct;
-    if (facetKey === "protocol" && v === "RF") return "радио (RF)";
-    return v;
+function normalizeFilterFacetValue(key, raw) {
+  const value = fixMojibake(String(raw || "")).replace(/\s+/g, " ").trim();
+  if (!value) return "";
+  const lower = value.toLowerCase();
+  const parseMetric = () => {
+    const m = value.match(/(-?\d+(?:[.,]\d+)?)\s*([a-zA-Z]+)/);
+    if (!m) return null;
+    const n = Number(String(m[1]).replace(",", "."));
+    if (!Number.isFinite(n)) return null;
+    return { n, unit: String(m[2] || "").toLowerCase() };
   };
-  return `
-    <fieldset class="filter-group">
-      <legend>${title}</legend>
-      <div class="filter-scroll">
-        ${options
-          .map(({ value, count }) => {
-            const checked = selectedSet.has(value) ? "checked" : "";
-            const display = formatFacetValue(key, value);
-            return `
-              <label class="check-field">
-                <input class="check-input" type="checkbox" value="${value}" data-filter-key="${key}" ${checked} />
-                <span class="check-label">${display} <small>(${count})</small></span>
-              </label>
-            `;
-          })
-          .join("")}
-      </div>
-    </fieldset>
-  `;
+
+  if (key === "systemTypes") {
+    if (/\bservice\b/.test(lower)) return "";
+    if (lower.includes("беспровод") || /\bwireless\b/.test(lower) || /\brf\b/.test(lower)) return "беспроводная";
+    if (lower.includes("провод") || /\bwired\b/.test(lower)) return "проводная";
+    return value;
+  }
+
+  if (key === "protocols") {
+    if (/rs[\s-]?485/i.test(value)) return "RS-485";
+    if (/modbus/i.test(value)) return "Modbus";
+    if (/ethernet/i.test(value)) return "Ethernet";
+    if (/wi[\s-]?fi/i.test(value)) return "Wi-Fi";
+    if (/zigbee/i.test(value)) return "Zigbee";
+    if (/z[\s-]?wave/i.test(value)) return "Z-Wave";
+    if (/dali/i.test(value)) return "DALI";
+    if (/bluetooth|\bble\b/i.test(value)) return "BLE";
+    if (/knx/i.test(value)) return "KNX";
+    if (/mqtt/i.test(value)) return "MQTT";
+    if (/\bcan\b/i.test(value)) return "CAN";
+    return value;
+  }
+
+  if (key === "mountings") {
+    if (/din/i.test(value)) return "DIN";
+    if (lower.includes("подрозет") || /\brecessed\b/i.test(value)) return "подрозетник";
+    if (lower.includes("наклад") || /\bsurface\b/i.test(value) || /\bwall\b/i.test(value)) return "накладной";
+    if (lower.includes("встраив")) return "встраиваемый";
+    return value;
+  }
+
+  if (key === "channels") {
+    const m = lower.match(/(\d+)/);
+    if (m) {
+      const n = Number(m[1]);
+      if (!Number.isFinite(n) || n < 1 || n > 64) return "";
+      return `${n} ch`;
+    }
+    return value;
+  }
+
+  if (key === "supplyVoltages") {
+    const m = parseMetric();
+    if (!m) return value;
+    if (m.unit === "mv") {
+      if (m.n < 1 || m.n > 600000) return "";
+      return value;
+    }
+    if (m.unit === "kv") {
+      if (m.n <= 0 || m.n > 1) return "";
+      return value;
+    }
+    if (m.unit === "v") {
+      if (m.n <= 0 || m.n > 400) return "";
+      return value;
+    }
+    return value;
+  }
+
+  if (key === "nominalCurrents") {
+    const m = parseMetric();
+    if (!m) return value;
+    if (m.unit === "ma") {
+      if (m.n <= 0 || m.n > 100000) return "";
+      return value;
+    }
+    if (m.unit === "a") {
+      if (m.n <= 0 || m.n > 200) return "";
+      return value;
+    }
+    return value;
+  }
+
+  if (key === "nominalPowers" || key === "maxLoads") {
+    const m = parseMetric();
+    if (!m) return value;
+    if (m.unit === "mw") {
+      if (m.n <= 0 || m.n > 1000000) return "";
+      return value;
+    }
+    if (m.unit === "w") {
+      if (m.n <= 0 || m.n > 20000) return "";
+      return value;
+    }
+    if (m.unit === "kw") {
+      if (m.n <= 0 || m.n > 20) return "";
+      return value;
+    }
+    return value;
+  }
+
+  return value;
 }
 
+function formatBrandFacetValue(facetKey, rawValue) {
+  const value = String(rawValue || "").trim();
+  if (!value) return value;
+  const normalized = normalizeFilterFacetValue(facetKey, value);
+  const unitsOnly = new Set(["supplyVoltages", "nominalCurrents", "nominalPowers", "maxLoads"]);
+  if (!unitsOnly.has(String(facetKey || ""))) return normalized;
+  return normalized
+    .replace(/\s*\u043a\u0412\u0442\b/gi, " kW")
+    .replace(/\s*\u043a\u0412\b/gi, " kV")
+    .replace(/\s*\u043c\u0412\u0442\b/gi, " mW")
+    .replace(/\s*\u043c\u0412\b/gi, " mV")
+    .replace(/\s*\u043c\u0410\b/gi, " mA")
+    .replace(/\s*\u0412\u0442\b/gi, " W")
+    .replace(/\s*\u0412\b/gi, " V")
+    .replace(/\s*\u0410\b/gi, " A")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const facetHelpers = createFacetHelpers({
+  normalizeValue: normalizeFilterFacetValue,
+  formatValue: formatBrandFacetValue
+});
+const {
+  splitMulti,
+  parseFacetNumericValue,
+  compareFacetOptionsByKey,
+  countSingle,
+  countMulti,
+  matchesSingle,
+  matchesMulti,
+  matchesMultiAll,
+  renderCheckGroup
+} = facetHelpers;
 function shouldShowFacetGroup(brandName, options, selectedSet, allowSingle = false) {
   const hasSelection = selectedSet instanceof Set && selectedSet.size > 0;
   const optionCount = Array.isArray(options) ? options.length : 0;
-  return optionCount > (allowSingle ? 0 : 1) || hasSelection;
+  return optionCount > 0 || hasSelection;
 }
 
 function compactFacetOptions(options, selectedSet) {
-  const selected = selectedSet instanceof Set ? selectedSet : new Set();
   const rows = Array.isArray(options) ? options : [];
   return rows.filter((row) => {
     const value = String((row && row.value) || "").trim();
-    const count = Number((row && row.count) || 0);
     if (!value) return false;
-    if (selected.has(value)) return true;
-    return count > 1;
+    return true;
   });
 }
 
@@ -367,6 +498,24 @@ function detectContext(selectedSub) {
   };
 }
 
+function getDominantTopCategory(items) {
+  const map = new Map();
+  for (const item of items || []) {
+    const key = String(item?.topCategory || "").trim();
+    if (!key) continue;
+    map.set(key, (map.get(key) || 0) + 1);
+  }
+  let best = "";
+  let bestCnt = 0;
+  for (const [key, cnt] of map.entries()) {
+    if (cnt > bestCnt) {
+      best = key;
+      bestCnt = cnt;
+    }
+  }
+  return best;
+}
+
 function getHiteProFacetProfile(selectedSub) {
   const subSlug = slugify(String(selectedSub || ""));
   const subRaw = String(selectedSub || "").toLowerCase();
@@ -375,7 +524,7 @@ function getHiteProFacetProfile(selectedSub) {
   const isRadioSwitches = subSlug.includes("radio") || subSlug.includes("vyklyuch") || /радио|выключ/.test(subRaw);
   const isServer = subSlug.includes("server") || /сервер/.test(subRaw);
   const isKits = subSlug.includes("komplekt") || /комплект/.test(subRaw);
-  const isOther = subSlug.includes("prochee") || /РїСЂРѕС‡/.test(subRaw);
+  const isOther = subSlug.includes("prochee") || /проч/.test(subRaw);
 
   if (isOther) {
     return {
@@ -822,7 +971,7 @@ export function renderBrandPage(state, appEl, brandSlug, renderProductCardFn, bi
   const brandName = brands.find((brand) => slugify(brand) === brandSlug);
 
   if (!brandName) {
-    appEl.innerHTML = "<p>Бренд не найден</p>";
+    applySafeHtml(appEl, "<p>Бренд не найден</p>");
     return;
   }
 
@@ -843,6 +992,9 @@ export function renderBrandPage(state, appEl, brandSlug, renderProductCardFn, bi
     return products
       .slice()
       .sort((a, b) => {
+        const aFeatured = Number(a?.isBrandFeatured || a?.is_brand_featured || 0) === 1 ? 1 : 0;
+        const bFeatured = Number(b?.isBrandFeatured || b?.is_brand_featured || 0) === 1 ? 1 : 0;
+        if (aFeatured !== bFeatured) return bFeatured - aFeatured;
         const aHasImage = a.image ? 1 : 0;
         const bHasImage = b.image ? 1 : 0;
         if (aHasImage !== bHasImage) return bHasImage - aHasImage;
@@ -858,45 +1010,40 @@ export function renderBrandPage(state, appEl, brandSlug, renderProductCardFn, bi
   const firstSub = effectiveSubcategories.find((x) => (grouped.get(x) || []).length) || effectiveSubcategories[0] || "";
   const firstSubToken = subcategoryRouteToken(firstSub);
   const allHref = firstSubToken ? `#/brands/${brandSlug}/${firstSubToken}` : `#/brands/${brandSlug}`;
+  const brandTitle = safeText(brandName);
 
-  appEl.innerHTML = `
-    ${pageTitle(brandName)}
-    ${searchRow(state.search)}
-    <section class="subcategory-grid">
-      ${effectiveSubcategories.map((subcategory) => {
-        const items = grouped.get(subcategory) || [];
-        if (items.length === 0) return "";
-        return `<a class="subcategory-chip" href="#/brands/${brandSlug}/${subcategoryRouteToken(subcategory)}">${subcategory} (${items.length})</a>`;
-      }).join("")}
-    </section>
+  applySafeHtml(appEl, `
+    <div class="listing-top">
+      <div class="brand-page-top">
+        ${pageTitle(brandTitle)}
+        ${searchRow(state.search)}
+      </div>
+      <div class="brand-mobile-toolbar">
+        <div class="mobile-filters-bar">
+          <a class="button button-outline mobile-categories-btn brand-sections-entry" href="${allHref}" aria-label="Разделы">
+            <i class="fa-solid fa-bars" aria-hidden="true"></i>
+            <span>Разделы</span>
+          </a>
+        </div>
+        <section class="subcategory-grid subcategory-grid-inline">
+          ${effectiveSubcategories.map((subcategory) => {
+            const items = grouped.get(subcategory) || [];
+            if (items.length === 0) return "";
+            return `<a class="subcategory-chip" href="#/brands/${brandSlug}/${subcategoryRouteToken(subcategory)}">${safeText(subcategory)} (${items.length})</a>`;
+          }).join("")}
+        </section>
+      </div>
+    </div>
     <section class="brand-featured-block">
       <div class="brand-featured-head">
-        <h3 class="brand-featured-title">Хиты бренда</h3>
-        <a class="button button-outline js-brand-view-all" data-target="${allHref}" href="${allHref}">Смотреть все</a>
+        <h3 class="brand-featured-title">\u0425\u0438\u0442\u044b \u0431\u0440\u0435\u043d\u0434\u0430</h3>
       </div>
       <section class="product-grid">
-        ${featured.length ? featured.map((p) => renderProductCardFn(p, (id) => isFavorite(state, id), PLACEHOLDER_IMAGE)).join("") : '<div class="note">Товары пока не найдены.</div>'}
+        ${featured.length ? featured.map((p) => renderProductCardFn(p, (id) => isFavorite(state, id), PLACEHOLDER_IMAGE)).join("") : '<div class="note">\u0422\u043e\u0432\u0430\u0440\u044b \u043f\u043e\u043a\u0430 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b.<\/div>'}
       </section>
     </section>
-  `;
+  `);
   bindSearch();
-
-  appEl.querySelectorAll(".js-brand-view-all").forEach((link) => {
-    link.addEventListener("click", (event) => {
-      const target = String(link.getAttribute("data-target") || link.getAttribute("href") || "").trim();
-      if (!target) return;
-      event.preventDefault();
-      if (location.hash !== target) {
-        location.hash = target;
-        return;
-      }
-      // Force rerender when hash is unchanged.
-      location.hash = "";
-      setTimeout(() => {
-        location.hash = target;
-      }, 0);
-    });
-  });
 
   appEl.querySelectorAll("[data-fav-toggle]").forEach((btn) => {
     btn.addEventListener("click", (event) => {
@@ -906,9 +1053,24 @@ export function renderBrandPage(state, appEl, brandSlug, renderProductCardFn, bi
       toggleFavorite(state, id);
       const active = isFavorite(state, id);
       btn.classList.toggle("is-active", active);
-      btn.textContent = active ? "♥" : "♡";
+      btn.innerHTML = favoriteIconMarkup(active);
     });
   });
+  appEl.querySelectorAll("[data-card-buy]").forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const id = String(btn.dataset.cardBuy || "").trim();
+      if (!id) return;
+      const cartQtyEl = document.getElementById("cartQty");
+      const miniCartEl = document.getElementById("miniCart");
+      addToCart(state, id, cartQtyEl, miniCartEl);
+      syncCardBuyBadges(state, appEl);
+    });
+  });
+  syncCardBuyBadges(state, appEl);
+  bindProductCardGalleries(appEl);
+  rebalanceProductCardMedia(appEl);
 }
 
 export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategorySlug, renderProductCardFn, bindSearch) {
@@ -916,44 +1078,66 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
   const brandName = brands.find((brand) => slugify(brand) === brandSlug);
 
   if (!brandName) {
-    appEl.innerHTML = "<p>Бренд не найден</p>";
+    applySafeHtml(appEl, "<p>Бренд не найден</p>");
     return;
   }
 
   const brandProducts = state.products.filter((p) => p.brand === brandName);
   const subcategories = getBrandSubcategories(brandName, brandProducts);
-  const effectiveSubcategories = subcategories.length
-    ? subcategories
-    : Array.from(new Set(brandProducts.map((p) => getBrandSubcategory(brandName, p)).filter(Boolean)));
+  const sectionCounts = new Map();
+  brandProducts.forEach((p) => {
+    const candidates = [
+      getBrandSubcategory(brandName, p),
+      String((p && p.brandSubcategory) || "").trim(),
+      String((p && p.subCategory) || "").trim(),
+      getGroupTail(p)
+    ];
+    const first = candidates
+      .map((v) => safeText(v))
+      .find((v) => v);
+    if (!first) return;
+    sectionCounts.set(first, (sectionCounts.get(first) || 0) + 1);
+  });
+  let effectiveSubcategories = subcategories.length
+    ? subcategories.filter((name) => (sectionCounts.get(name) || 0) > 0)
+    : Array.from(sectionCounts.keys());
+  if (!effectiveSubcategories.length) {
+    effectiveSubcategories = Array.from(new Set(
+      brandProducts
+        .map((p) => safeText(String((p && (p.subCategory || p.group || p.group_name || "")) || "").split("/").pop()))
+        .filter(Boolean)
+    ));
+  }
   const selectedSub = effectiveSubcategories.find((x) => isSameSubcategoryToken(x, subcategorySlug)) || "";
+  const brandTitle = safeText(brandName);
   const bySub = selectedSub ? brandProducts.filter((p) => getBrandSubcategory(brandName, p) === selectedSub) : brandProducts;
 
   const facets = {
-    brands: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "brand")),
-    systemTypes: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "systemType")),
-    protocols: countMulti(bySub, (p) => getFacetValue(brandName, selectedSub, p, "protocol")),
-    mountings: countMulti(bySub, (p) => getFacetValue(brandName, selectedSub, p, "mounting")),
-    supplyVoltages: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "supplyVoltage")),
-    channels: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "channels")),
-    nominalCurrents: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "nominalCurrent")),
-    nominalPowers: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "nominalPower")),
-    sensorTypes: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "sensorType")),
-    indoorOutdoor: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "indoorOutdoor")),
-    ipRatings: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "ipRating")),
-    ioCounts: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "ioCount")),
-    webInterfaces: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "webInterface")),
-    scenarioSupports: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "scenarioSupport")),
-    loadTypes: countMulti(bySub, (p) => getFacetValue(brandName, selectedSub, p, "loadType")),
-    maxLoads: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "maxLoad"))
+    brands: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "brand"), "brands"),
+    systemTypes: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "systemType"), "systemTypes"),
+    protocols: countMulti(bySub, (p) => getFacetValue(brandName, selectedSub, p, "protocol"), "protocols"),
+    mountings: countMulti(bySub, (p) => getFacetValue(brandName, selectedSub, p, "mounting"), "mountings"),
+    supplyVoltages: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "supplyVoltage"), "supplyVoltages"),
+    channels: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "channels"), "channels"),
+    nominalCurrents: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "nominalCurrent"), "nominalCurrents"),
+    nominalPowers: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "nominalPower"), "nominalPowers"),
+    sensorTypes: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "sensorType"), "sensorTypes"),
+    indoorOutdoor: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "indoorOutdoor"), "indoorOutdoor"),
+    ipRatings: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "ipRating"), "ipRatings"),
+    ioCounts: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "ioCount"), "ioCounts"),
+    webInterfaces: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "webInterface"), "webInterfaces"),
+    scenarioSupports: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "scenarioSupport"), "scenarioSupports"),
+    loadTypes: countMulti(bySub, (p) => getFacetValue(brandName, selectedSub, p, "loadType"), "loadTypes"),
+    maxLoads: countSingle(bySub, (p) => getFacetValue(brandName, selectedSub, p, "maxLoad"), "maxLoads")
   };
 
   const selected = {
     brands: new Set((state.filters.brands || []).map((x) => normalizeBrandFacetValue(x)).filter(Boolean)),
-    systemTypes: new Set(state.filters.systemTypes),
-    protocols: new Set(state.filters.protocols),
-    mountings: new Set(state.filters.mountings),
+    systemTypes: new Set((state.filters.systemTypes || []).map((x) => normalizeFilterFacetValue("systemTypes", x)).filter(Boolean)),
+    protocols: new Set((state.filters.protocols || []).map((x) => normalizeFilterFacetValue("protocols", x)).filter(Boolean)),
+    mountings: new Set((state.filters.mountings || []).map((x) => normalizeFilterFacetValue("mountings", x)).filter(Boolean)),
     supplyVoltages: new Set(state.filters.supplyVoltages),
-    channels: new Set(state.filters.channels),
+    channels: new Set((state.filters.channels || []).map((x) => normalizeFilterFacetValue("channels", x)).filter(Boolean)),
     nominalCurrents: new Set(state.filters.nominalCurrents),
     nominalPowers: new Set(state.filters.nominalPowers),
     sensorTypes: new Set(state.filters.sensorTypes),
@@ -986,6 +1170,15 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
   const hasVisibleFacetOptions = Object.values(visibleFacets).some((list) => Array.isArray(list) && list.length > 0);
   const renderFacets = hasVisibleFacetOptions ? visibleFacets : facets;
   const allowSingleFacet = !hasVisibleFacetOptions;
+  const dominantCategory = getDominantTopCategory(bySub);
+  const facetProfile = getCategoryFacetProfile(dominantCategory);
+  const profiledFacets = {
+    ...renderFacets,
+    channels: applyFacetProfile(renderFacets.channels, "channels", facetProfile),
+    supplyVoltages: applyFacetProfile(renderFacets.supplyVoltages, "supplyVoltages", facetProfile),
+    nominalCurrents: applyFacetProfile(renderFacets.nominalCurrents, "nominalCurrents", facetProfile),
+    nominalPowers: applyFacetProfile(renderFacets.nominalPowers, "nominalPowers", facetProfile)
+  };
 
   const minFacetPrice = bySub.length ? Math.floor(Math.min(...bySub.map((p) => Number(p.price || 0)))) : 0;
   const maxFacetPrice = bySub.length ? Math.ceil(Math.max(...bySub.map((p) => Number(p.price || 0)))) : 0;
@@ -994,16 +1187,16 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
   const context = detectContext(selectedSub);
   const facetVisibility = resolveFacetVisibility(brandName, selectedSub, context);
 
-  const items = bySub.filter((p) => {
+  const filteredItems = bySub.filter((p) => {
     if (!productMatchesSearch(p, state.search)) return false;
-    if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "brand"), selected.brands)) return false;
-    if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "systemType"), selected.systemTypes)) return false;
-    if (!matchesMultiAll(getFacetValue(brandName, selectedSub, p, "protocol"), selected.protocols)) return false;
-    if (!matchesMulti(getFacetValue(brandName, selectedSub, p, "mounting"), selected.mountings)) return false;
-    if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "supplyVoltage"), selected.supplyVoltages)) return false;
-    if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "channels"), selected.channels)) return false;
-    if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "nominalCurrent"), selected.nominalCurrents)) return false;
-    if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "nominalPower"), selected.nominalPowers)) return false;
+    if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "brand"), selected.brands, "brands")) return false;
+    if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "systemType"), selected.systemTypes, "systemTypes")) return false;
+    if (!matchesMultiAll(getFacetValue(brandName, selectedSub, p, "protocol"), selected.protocols, "protocols")) return false;
+    if (!matchesMulti(getFacetValue(brandName, selectedSub, p, "mounting"), selected.mountings, "mountings")) return false;
+    if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "supplyVoltage"), selected.supplyVoltages, "supplyVoltages")) return false;
+    if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "channels"), selected.channels, "channels")) return false;
+    if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "nominalCurrent"), selected.nominalCurrents, "nominalCurrents")) return false;
+    if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "nominalPower"), selected.nominalPowers, "nominalPowers")) return false;
     if (context.sensors) {
       if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "sensorType"), selected.sensorTypes)) return false;
       if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "indoorOutdoor"), selected.indoorOutdoor)) return false;
@@ -1024,84 +1217,450 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
     return true;
   });
 
-  appEl.innerHTML = `
-    ${pageTitle(brandName)}
-    ${searchRow(state.search)}
-    <section class="subcategory-grid">
-      ${effectiveSubcategories.map((subcategory) => {
-        const count = brandProducts.filter((p) => getBrandSubcategory(brandName, p) === subcategory).length;
-        if (count === 0) return "";
-        const active = selectedSub === subcategory ? "is-active" : "";
-        return `<a class="subcategory-chip ${active}" href="#/brands/${brandSlug}/${subcategoryRouteToken(subcategory)}">${subcategory}</a>`;
-      }).join("")}
-    </section>
+  const allowedSortModes = new Set(["popular", "cheaper", "expensive"]);
+  const requestedSortMode = String(state.catalogSort || "popular");
+  const sortMode = allowedSortModes.has(requestedSortMode) ? requestedSortMode : "popular";
+  const sortItems = (list, mode) => {
+    const withIndex = list.map((item, index) => ({ item, index }));
+    const numericPrice = (product) => {
+      const view = getProductPriceView(product || {});
+      const n = Number(view && view.rub);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+    withIndex.sort((a, b) => {
+      if (mode === "cheaper") {
+        const ap = numericPrice(a.item);
+        const bp = numericPrice(b.item);
+        if (ap == null && bp == null) return a.index - b.index;
+        if (ap == null) return 1;
+        if (bp == null) return -1;
+        if (ap !== bp) return ap - bp;
+        return a.index - b.index;
+      }
+      if (mode === "expensive") {
+        const ap = numericPrice(a.item);
+        const bp = numericPrice(b.item);
+        if (ap == null && bp == null) return a.index - b.index;
+        if (ap == null) return 1;
+        if (bp == null) return -1;
+        if (ap !== bp) return bp - ap;
+        return a.index - b.index;
+      }
+      return a.index - b.index;
+    });
+    return withIndex.map((entry) => entry.item);
+  };
+  const items = sortItems(filteredItems, sortMode);
+
+  applySafeHtml(appEl, `
+    <div class="listing-top">
+      <div class="brand-page-top">
+        ${pageTitle(brandTitle)}
+        ${searchRow(state.search)}
+      </div>
+      <div class="brand-mobile-toolbar">
+        <div class="mobile-filters-bar">
+          <button class="button button-outline mobile-categories-btn" id="brandOpenCategoryBrowserBtn" type="button" aria-label="Разделы">
+            <i class="fa-solid fa-bars" aria-hidden="true"></i>
+            <span>Разделы</span>
+          </button>
+          <button class="button button-outline mobile-sort-btn" id="brandOpenSortBtn" type="button" aria-label="Сортировка">
+            <i class="fa-solid fa-arrow-down-wide-short" aria-hidden="true"></i>
+          </button>
+          <button class="button button-outline mobile-filters-btn" id="brandOpenFiltersBtn" type="button" aria-label="\u0424\u0438\u043b\u044c\u0442\u0440\u044b">
+            <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+            <span class="mobile-filters-count" id="brandMobileFiltersCount" hidden>0</span>
+          </button>
+          <div class="mobile-selected-filters" id="brandMobileSelectedFilters"></div>
+        </div>
+        <section class="subcategory-grid subcategory-grid-inline">
+          ${effectiveSubcategories.map((subcategory) => {
+            const count = sectionCounts.get(subcategory) || 0;
+            if (count === 0) return "";
+            const active = selectedSub === subcategory ? "is-active" : "";
+            return `<a class="subcategory-chip ${active}" href="#/brands/${brandSlug}/${subcategoryRouteToken(subcategory)}">${safeText(subcategory)}</a>`;
+          }).join("")}
+        </section>
+      </div>
+    </div>
     <div class="grid-layout">
       <section class="product-grid">
         ${items.length ? items.map((product) => renderProductCardFn(product, (id) => isFavorite(state, id), PLACEHOLDER_IMAGE)).join("") : '<div class="note">Товары не найдены</div>'}
       </section>
-      <aside class="filters">
+      <aside class="filters" id="brandFiltersPanel">
+        <div class="filters-popup-head">
+          <h4>\u0424\u0438\u043b\u044c\u0442\u0440\u044b</h4>
+          <button class="button button-plain filters-close-btn" id="brandCloseFiltersBtn" type="button" aria-label="\u0417\u0430\u043a\u0440\u044b\u0442\u044c">\u2715</button>
+        </div>
         <h4>Фильтры</h4>
+        <div class="filters-selected" id="brandSelectedFilters"></div>
         <fieldset class="filter-group">
-          <legend>Цена, руб.</legend>
+          <legend>Цена, ₽ (пересчет)</legend>
           <div class="price-row">
             <input class="input" id="brandMinPriceFilter" type="number" min="${minFacetPrice}" placeholder="от ${minFacetPrice}" value="${state.filters.minPrice}" />
             <input class="input" id="brandMaxPriceFilter" type="number" min="${minFacetPrice}" placeholder="до ${maxFacetPrice}" value="${state.filters.maxPrice}" />
           </div>
         </fieldset>
         
-        ${facetVisibility.systemTypes && shouldShowFacetGroup(brandName, renderFacets.systemTypes, selected.systemTypes, allowSingleFacet) ? renderCheckGroup("Тип системы", "systemTypes", renderFacets.systemTypes, selected.systemTypes) : ""}
-        ${facetVisibility.protocols && shouldShowFacetGroup(brandName, renderFacets.protocols, selected.protocols, allowSingleFacet) ? renderCheckGroup("Протокол", "protocols", renderFacets.protocols, selected.protocols) : ""}
-        ${facetVisibility.mountings && shouldShowFacetGroup(brandName, renderFacets.mountings, selected.mountings, allowSingleFacet) ? renderCheckGroup("Монтаж", "mountings", renderFacets.mountings, selected.mountings) : ""}
-        ${facetVisibility.supplyVoltages && shouldShowFacetGroup(brandName, renderFacets.supplyVoltages, selected.supplyVoltages, allowSingleFacet) ? renderCheckGroup("Напряжение питания", "supplyVoltages", renderFacets.supplyVoltages, selected.supplyVoltages) : ""}
-        ${facetVisibility.channels && shouldShowFacetGroup(brandName, renderFacets.channels, selected.channels, allowSingleFacet) ? renderCheckGroup("Количество каналов", "channels", renderFacets.channels, selected.channels) : ""}
-        ${facetVisibility.nominalCurrents && shouldShowFacetGroup(brandName, renderFacets.nominalCurrents, selected.nominalCurrents, allowSingleFacet) ? renderCheckGroup("Номинальный ток", "nominalCurrents", renderFacets.nominalCurrents, selected.nominalCurrents) : ""}
-        ${facetVisibility.nominalPowers && shouldShowFacetGroup(brandName, renderFacets.nominalPowers, selected.nominalPowers, allowSingleFacet) ? renderCheckGroup("Номинальная мощность", "nominalPowers", renderFacets.nominalPowers, selected.nominalPowers) : ""}
-        ${facetVisibility.sensorTypes && shouldShowFacetGroup(brandName, renderFacets.sensorTypes, selected.sensorTypes, allowSingleFacet) ? renderCheckGroup("Тип датчика", "sensorTypes", renderFacets.sensorTypes, selected.sensorTypes) : ""}
-        ${facetVisibility.indoorOutdoor && shouldShowFacetGroup(brandName, renderFacets.indoorOutdoor, selected.indoorOutdoor, allowSingleFacet) ? renderCheckGroup("Внутренний / уличный", "indoorOutdoor", renderFacets.indoorOutdoor, selected.indoorOutdoor) : ""}
-        ${facetVisibility.ipRatings && shouldShowFacetGroup(brandName, renderFacets.ipRatings, selected.ipRatings, allowSingleFacet) ? renderCheckGroup("Степень защиты IP", "ipRatings", renderFacets.ipRatings, selected.ipRatings) : ""}
-        ${facetVisibility.ioCounts && shouldShowFacetGroup(brandName, renderFacets.ioCounts, selected.ioCounts, allowSingleFacet) ? renderCheckGroup("Входы / выходы", "ioCounts", renderFacets.ioCounts, selected.ioCounts) : ""}
-        ${facetVisibility.webInterfaces && shouldShowFacetGroup(brandName, renderFacets.webInterfaces, selected.webInterfaces, allowSingleFacet) ? renderCheckGroup("Web-интерфейс", "webInterfaces", renderFacets.webInterfaces, selected.webInterfaces) : ""}
-        ${facetVisibility.scenarioSupports && shouldShowFacetGroup(brandName, renderFacets.scenarioSupports, selected.scenarioSupports, allowSingleFacet) ? renderCheckGroup("Поддержка сценариев", "scenarioSupports", renderFacets.scenarioSupports, selected.scenarioSupports) : ""}
-        ${facetVisibility.loadTypes && shouldShowFacetGroup(brandName, renderFacets.loadTypes, selected.loadTypes, allowSingleFacet) ? renderCheckGroup("Тип нагрузки", "loadTypes", renderFacets.loadTypes, selected.loadTypes) : ""}
-        ${facetVisibility.maxLoads && shouldShowFacetGroup(brandName, renderFacets.maxLoads, selected.maxLoads, allowSingleFacet) ? renderCheckGroup("Максимальная нагрузка", "maxLoads", renderFacets.maxLoads, selected.maxLoads) : ""}
-        <button class="button button-outline" id="brandResetFiltersBtn" type="button">Сбросить</button>
+        ${facetVisibility.systemTypes && shouldShowFacetGroup(brandName, profiledFacets.systemTypes, selected.systemTypes, allowSingleFacet) ? renderCheckGroup("Тип системы", "systemTypes", profiledFacets.systemTypes, selected.systemTypes) : ""}
+        ${facetVisibility.protocols && shouldShowFacetGroup(brandName, profiledFacets.protocols, selected.protocols, allowSingleFacet) ? renderCheckGroup("Протокол", "protocols", profiledFacets.protocols, selected.protocols) : ""}
+        ${facetVisibility.mountings && shouldShowFacetGroup(brandName, profiledFacets.mountings, selected.mountings, allowSingleFacet) ? renderCheckGroup("Монтаж", "mountings", profiledFacets.mountings, selected.mountings) : ""}
+        ${facetVisibility.supplyVoltages && shouldShowFacetGroup(brandName, profiledFacets.supplyVoltages, selected.supplyVoltages, allowSingleFacet) ? renderCheckGroup("Напряжение питания", "supplyVoltages", profiledFacets.supplyVoltages, selected.supplyVoltages) : ""}
+        ${facetVisibility.channels && shouldShowFacetGroup(brandName, profiledFacets.channels, selected.channels, allowSingleFacet) ? renderCheckGroup("Количество каналов", "channels", profiledFacets.channels, selected.channels) : ""}
+        ${facetVisibility.nominalCurrents && shouldShowFacetGroup(brandName, profiledFacets.nominalCurrents, selected.nominalCurrents, allowSingleFacet) ? renderCheckGroup("Номинальный ток", "nominalCurrents", profiledFacets.nominalCurrents, selected.nominalCurrents) : ""}
+        ${facetVisibility.nominalPowers && shouldShowFacetGroup(brandName, profiledFacets.nominalPowers, selected.nominalPowers, allowSingleFacet) ? renderCheckGroup("Номинальная мощность", "nominalPowers", profiledFacets.nominalPowers, selected.nominalPowers) : ""}
+        ${facetVisibility.sensorTypes && shouldShowFacetGroup(brandName, profiledFacets.sensorTypes, selected.sensorTypes, allowSingleFacet) ? renderCheckGroup("Тип датчика", "sensorTypes", profiledFacets.sensorTypes, selected.sensorTypes) : ""}
+        ${facetVisibility.indoorOutdoor && shouldShowFacetGroup(brandName, profiledFacets.indoorOutdoor, selected.indoorOutdoor, allowSingleFacet) ? renderCheckGroup("Внутренний / уличный", "indoorOutdoor", profiledFacets.indoorOutdoor, selected.indoorOutdoor) : ""}
+        ${facetVisibility.ipRatings && shouldShowFacetGroup(brandName, profiledFacets.ipRatings, selected.ipRatings, allowSingleFacet) ? renderCheckGroup("\u041a\u043b\u0430\u0441\u0441 \u0437\u0430\u0449\u0438\u0442\u044b IP", "ipRatings", profiledFacets.ipRatings, selected.ipRatings) : ""}
+        ${facetVisibility.ioCounts && shouldShowFacetGroup(brandName, profiledFacets.ioCounts, selected.ioCounts, allowSingleFacet) ? renderCheckGroup("Входы / выходы", "ioCounts", profiledFacets.ioCounts, selected.ioCounts) : ""}
+        ${facetVisibility.webInterfaces && shouldShowFacetGroup(brandName, profiledFacets.webInterfaces, selected.webInterfaces, allowSingleFacet) ? renderCheckGroup("Web-интерфейс", "webInterfaces", profiledFacets.webInterfaces, selected.webInterfaces) : ""}
+        ${facetVisibility.scenarioSupports && shouldShowFacetGroup(brandName, profiledFacets.scenarioSupports, selected.scenarioSupports, allowSingleFacet) ? renderCheckGroup("Поддержка сценариев", "scenarioSupports", profiledFacets.scenarioSupports, selected.scenarioSupports) : ""}
+        ${facetVisibility.loadTypes && shouldShowFacetGroup(brandName, profiledFacets.loadTypes, selected.loadTypes, allowSingleFacet) ? renderCheckGroup("Тип нагрузки", "loadTypes", profiledFacets.loadTypes, selected.loadTypes) : ""}
+        ${facetVisibility.maxLoads && shouldShowFacetGroup(brandName, profiledFacets.maxLoads, selected.maxLoads, allowSingleFacet) ? renderCheckGroup("Максимальная нагрузка", "maxLoads", profiledFacets.maxLoads, selected.maxLoads) : ""}
+        <button class="button apply-filters-btn" id="brandApplyFiltersBtn" type="button">\u041f\u043e\u043a\u0430\u0437\u0430\u0442\u044c \u0442\u043e\u0432\u0430\u0440\u044b (${items.length})</button>
       </aside>
     </div>
-  `;
+    <aside class="category-browser-panel" id="brandCategoryBrowserPanel" aria-label="Навигатор разделов бренда">
+      <div class="filters-popup-head category-browser-head">
+        <h4>Разделы</h4>
+        <button class="button button-plain filters-close-btn" id="brandCloseCategoryBrowserBtn" type="button" aria-label="Закрыть">\u2715</button>
+      </div>
+      <div class="category-browser-list">
+        <section class="category-browser-group is-open">
+          <a class="category-browser-sub ${selectedSub ? "" : "is-active"}" href="#/brands/${brandSlug}">Все товары бренда</a>
+          ${effectiveSubcategories.length ? `
+            <div class="category-browser-subs">
+              ${effectiveSubcategories.map((subcategory) => {
+                const active = selectedSub === subcategory ? "is-active" : "";
+                return `<a class="category-browser-sub ${active}" href="#/brands/${brandSlug}/${subcategoryRouteToken(subcategory)}">${safeText(subcategory)}</a>`;
+              }).join("")}
+            </div>
+          ` : ""}
+        </section>
+      </div>
+    </aside>
+    <aside class="sort-panel" id="brandSortPanel" aria-label="Сортировка">
+      <div class="sort-panel-handle" aria-hidden="true"></div>
+      <div class="sort-panel-head">
+        <h4>Показывать сначала</h4>
+        <button class="button button-plain filters-close-btn" id="brandCloseSortBtn" type="button" aria-label="Закрыть">\u2715</button>
+      </div>
+      <div class="sort-options">
+        <label class="sort-option">
+          <span>Популярные</span>
+          <input type="radio" name="brandSortMode" value="popular" ${sortMode === "popular" ? "checked" : ""} />
+        </label>
+        <label class="sort-option">
+          <span>Подешевле</span>
+          <input type="radio" name="brandSortMode" value="cheaper" ${sortMode === "cheaper" ? "checked" : ""} />
+        </label>
+        <label class="sort-option">
+          <span>Подороже</span>
+          <input type="radio" name="brandSortMode" value="expensive" ${sortMode === "expensive" ? "checked" : ""} />
+        </label>
+      </div>
+      <button class="button button-outline sort-cancel-btn" id="brandCancelSortBtn" type="button">Отменить</button>
+    </aside>
+    <div class="filters-backdrop" id="brandFiltersBackdrop" hidden></div>
+    <div class="filters-backdrop" id="brandCategoryBrowserBackdrop" hidden></div>
+    <div class="filters-backdrop" id="brandSortBackdrop" hidden></div>
+  `);
 
   bindSearch();
 
+  const filterKeys = [
+    "brands",
+    "systemTypes",
+    "protocols",
+    "mountings",
+    "supplyVoltages",
+    "channels",
+    "nominalCurrents",
+    "nominalPowers",
+    "sensorTypes",
+    "indoorOutdoor",
+    "ipRatings",
+    "ioCounts",
+    "webInterfaces",
+    "scenarioSupports",
+    "loadTypes",
+    "maxLoads"
+  ];
+  const buildSelected = (filtersSnapshot) => ({
+    brands: new Set((filtersSnapshot.brands || []).map((x) => normalizeBrandFacetValue(x)).filter(Boolean)),
+    systemTypes: new Set((filtersSnapshot.systemTypes || []).map((x) => normalizeFilterFacetValue("systemTypes", x)).filter(Boolean)),
+    protocols: new Set((filtersSnapshot.protocols || []).map((x) => normalizeFilterFacetValue("protocols", x)).filter(Boolean)),
+    mountings: new Set((filtersSnapshot.mountings || []).map((x) => normalizeFilterFacetValue("mountings", x)).filter(Boolean)),
+    supplyVoltages: new Set(filtersSnapshot.supplyVoltages || []),
+    channels: new Set((filtersSnapshot.channels || []).map((x) => normalizeFilterFacetValue("channels", x)).filter(Boolean)),
+    nominalCurrents: new Set(filtersSnapshot.nominalCurrents || []),
+    nominalPowers: new Set(filtersSnapshot.nominalPowers || []),
+    sensorTypes: new Set(filtersSnapshot.sensorTypes || []),
+    indoorOutdoor: new Set(filtersSnapshot.indoorOutdoor || []),
+    ipRatings: new Set(filtersSnapshot.ipRatings || []),
+    ioCounts: new Set(filtersSnapshot.ioCounts || []),
+    webInterfaces: new Set(filtersSnapshot.webInterfaces || []),
+    scenarioSupports: new Set(filtersSnapshot.scenarioSupports || []),
+    loadTypes: new Set(filtersSnapshot.loadTypes || []),
+    maxLoads: new Set(filtersSnapshot.maxLoads || [])
+  });
+  const countItemsForFilters = (filtersSnapshot) => {
+    const selectedSnapshot = buildSelected(filtersSnapshot);
+    const minLocal = filtersSnapshot.minPrice !== "" ? Number(filtersSnapshot.minPrice) : null;
+    const maxLocal = filtersSnapshot.maxPrice !== "" ? Number(filtersSnapshot.maxPrice) : null;
+    return bySub.filter((p) => {
+      if (!productMatchesSearch(p, state.search)) return false;
+      if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "brand"), selectedSnapshot.brands, "brands")) return false;
+      if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "systemType"), selectedSnapshot.systemTypes, "systemTypes")) return false;
+      if (!matchesMultiAll(getFacetValue(brandName, selectedSub, p, "protocol"), selectedSnapshot.protocols, "protocols")) return false;
+      if (!matchesMulti(getFacetValue(brandName, selectedSub, p, "mounting"), selectedSnapshot.mountings, "mountings")) return false;
+      if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "supplyVoltage"), selectedSnapshot.supplyVoltages, "supplyVoltages")) return false;
+      if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "channels"), selectedSnapshot.channels, "channels")) return false;
+      if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "nominalCurrent"), selectedSnapshot.nominalCurrents, "nominalCurrents")) return false;
+      if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "nominalPower"), selectedSnapshot.nominalPowers, "nominalPowers")) return false;
+      if (context.sensors) {
+        if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "sensorType"), selectedSnapshot.sensorTypes)) return false;
+        if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "indoorOutdoor"), selectedSnapshot.indoorOutdoor)) return false;
+        if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "ipRating"), selectedSnapshot.ipRatings)) return false;
+      }
+      if (context.controllers) {
+        if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "ioCount"), selectedSnapshot.ioCounts)) return false;
+        if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "webInterface"), selectedSnapshot.webInterfaces)) return false;
+        if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "scenarioSupport"), selectedSnapshot.scenarioSupports)) return false;
+      }
+      if (context.relays) {
+        if (!matchesMulti(getFacetValue(brandName, selectedSub, p, "loadType"), selectedSnapshot.loadTypes)) return false;
+        if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "maxLoad"), selectedSnapshot.maxLoads)) return false;
+      }
+      const price = Number(p.price || 0);
+      if (minLocal !== null && price < minLocal) return false;
+      if (maxLocal !== null && price > maxLocal) return false;
+      return true;
+    }).length;
+  };
+  const minPriceFilter = document.getElementById("brandMinPriceFilter");
+  const maxPriceFilter = document.getElementById("brandMaxPriceFilter");
+  const collectDraftFilters = () => {
+    const draft = { ...state.filters };
+    filterKeys.forEach((key) => {
+      draft[key] = [];
+    });
+    appEl.querySelectorAll("[data-filter-key]").forEach((input) => {
+      const key = input.dataset.filterKey;
+      if (!key || !Array.isArray(draft[key])) return;
+      if (input.checked) draft[key].push(input.value);
+    });
+    draft.minPrice = minPriceFilter?.value?.trim?.() || "";
+    draft.maxPrice = maxPriceFilter?.value?.trim?.() || "";
+    return draft;
+  };
+  const applyBtn = document.getElementById("brandApplyFiltersBtn");
+  const selectedBox = document.getElementById("brandSelectedFilters");
+  const mobileSelectedBox = document.getElementById("brandMobileSelectedFilters");
+  const mobileFiltersCount = document.getElementById("brandMobileFiltersCount");
+  const applyDraftFilters = () => {
+    const draft = collectDraftFilters();
+    filterKeys.forEach((key) => {
+      state.filters[key] = Array.isArray(draft[key]) ? draft[key] : [];
+    });
+    state.filters.minPrice = draft.minPrice;
+    state.filters.maxPrice = draft.maxPrice;
+    renderBrandSubcategoryPage(state, appEl, brandSlug, subcategorySlug, renderProductCardFn, bindSearch);
+  };
+  const buildDraftChips = (draft) => {
+    const chips = [];
+    filterKeys.forEach((key) => {
+      (draft[key] || []).forEach((value) => chips.push({ key, value, label: value }));
+    });
+    if (draft.minPrice) chips.push({ key: "minPrice", value: draft.minPrice, label: `от ${draft.minPrice}` });
+    if (draft.maxPrice) chips.push({ key: "maxPrice", value: draft.maxPrice, label: `до ${draft.maxPrice}` });
+    return chips;
+  };
+  const renderSelectedChips = () => {
+    if (!selectedBox && !mobileSelectedBox) return;
+    const esc = (value) =>
+      String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    const draft = collectDraftFilters();
+    const chips = buildDraftChips(draft);
+    if (mobileFiltersCount) {
+      mobileFiltersCount.textContent = String(chips.length);
+      mobileFiltersCount.hidden = chips.length < 1;
+    }
+
+    if (!chips.length) {
+      if (selectedBox) selectedBox.innerHTML = "";
+      if (mobileSelectedBox) mobileSelectedBox.innerHTML = "";
+      return;
+    }
+
+    const chipsMarkup = `
+      ${chips
+        .map(
+          ({ key, value, label }) => `
+            <button class="filter-chip" type="button" data-chip-remove="${key}" data-chip-value="${esc(String(value))}">
+              <span>${esc(String(label))}</span>
+              <span class="filter-chip-x">\u00d7</span>
+            </button>
+          `
+        )
+        .join("")}
+    `;
+    if (selectedBox) {
+      selectedBox.innerHTML = `
+      <button class="filter-chip filter-chip-clear" type="button" data-chip-clear-all>\u00d7</button>
+        ${chipsMarkup}
+      `;
+    }
+    if (mobileSelectedBox) {
+      mobileSelectedBox.innerHTML = chipsMarkup;
+    }
+
+    const connectChipEvents = (box) => {
+      if (!box) return;
+      box.querySelectorAll("[data-chip-remove]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+        const key = btn.dataset.chipRemove;
+        const value = btn.dataset.chipValue || "";
+        if (key === "minPrice" && minPriceFilter) {
+          minPriceFilter.value = "";
+          minPriceFilter.dispatchEvent(new Event("input", { bubbles: true }));
+          return;
+        }
+        if (key === "maxPrice" && maxPriceFilter) {
+          maxPriceFilter.value = "";
+          maxPriceFilter.dispatchEvent(new Event("input", { bubbles: true }));
+          return;
+        }
+        const target = appEl.querySelector(`[data-filter-key="${key}"][value="${CSS.escape(value)}"]`);
+        if (target) {
+          target.checked = false;
+          target.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        applyDraftFilters();
+      });
+        });
+    };
+    connectChipEvents(selectedBox);
+    connectChipEvents(mobileSelectedBox);
+
+    const clearAllBtn = selectedBox ? selectedBox.querySelector("[data-chip-clear-all]") : null;
+    if (clearAllBtn) {
+      clearAllBtn.addEventListener("click", () => {
+        appEl.querySelectorAll("[data-filter-key]").forEach((input) => {
+          input.checked = false;
+        });
+        if (minPriceFilter) minPriceFilter.value = "";
+        if (maxPriceFilter) maxPriceFilter.value = "";
+        applyDraftFilters();
+      });
+    }
+  };
+  const updateApplyButton = () => {
+    if (!applyBtn) return;
+    const count = countItemsForFilters(collectDraftFilters());
+    if (count < 1) {
+      applyBtn.textContent = "\u041d\u0435\u0442 \u043f\u043e\u0434\u0445\u043e\u0434\u044f\u0449\u0438\u0445 \u043f\u0440\u0435\u0434\u043b\u043e\u0436\u0435\u043d\u0438\u0439";
+      applyBtn.classList.add("is-empty");
+    } else {
+      applyBtn.textContent = `\u041f\u043e\u043a\u0430\u0437\u0430\u0442\u044c \u0442\u043e\u0432\u0430\u0440\u044b (${count})`;
+      applyBtn.classList.remove("is-empty");
+    }
+  };
   appEl.querySelectorAll("[data-filter-key]").forEach((input) => {
     input.addEventListener("change", () => {
-      const key = input.dataset.filterKey;
-      if (!key || !Array.isArray(state.filters[key])) return;
-      const value = input.value;
-      if (input.checked) {
-        if (!state.filters[key].includes(value)) state.filters[key].push(value);
-      } else {
-        state.filters[key] = state.filters[key].filter((x) => x !== value);
-      }
+      updateApplyButton();
+      renderSelectedChips();
+    });
+  });
+  if (minPriceFilter) minPriceFilter.addEventListener("input", () => {
+    updateApplyButton();
+    renderSelectedChips();
+  });
+  if (maxPriceFilter) maxPriceFilter.addEventListener("input", () => {
+    updateApplyButton();
+    renderSelectedChips();
+  });
+  updateApplyButton();
+  renderSelectedChips();
+
+  if (applyBtn) {
+    applyBtn.addEventListener("click", () => {
+      applyDraftFilters();
+    });
+  }
+
+  const filtersPanel = document.getElementById("brandFiltersPanel");
+  const openFiltersBtn = document.getElementById("brandOpenFiltersBtn");
+  const closeFiltersBtn = document.getElementById("brandCloseFiltersBtn");
+  const filtersBackdrop = document.getElementById("brandFiltersBackdrop");
+  const categoryBrowserPanel = document.getElementById("brandCategoryBrowserPanel");
+  const openCategoryBrowserBtn = document.getElementById("brandOpenCategoryBrowserBtn");
+  const closeCategoryBrowserBtn = document.getElementById("brandCloseCategoryBrowserBtn");
+  const categoryBrowserBackdrop = document.getElementById("brandCategoryBrowserBackdrop");
+  const sortPanel = document.getElementById("brandSortPanel");
+  const openSortBtn = document.getElementById("brandOpenSortBtn");
+  const closeSortBtn = document.getElementById("brandCloseSortBtn");
+  const cancelSortBtn = document.getElementById("brandCancelSortBtn");
+  const sortBackdrop = document.getElementById("brandSortBackdrop");
+  const closeFilters = () => {
+    if (!filtersPanel || !filtersBackdrop) return;
+    filtersPanel.classList.remove("is-open");
+    filtersBackdrop.hidden = true;
+  };
+  const closeCategoryBrowser = () => {
+    if (!categoryBrowserPanel || !categoryBrowserBackdrop) return;
+    categoryBrowserPanel.classList.remove("is-open");
+    categoryBrowserBackdrop.hidden = true;
+  };
+  const closeSort = () => {
+    if (!sortPanel || !sortBackdrop) return;
+    sortPanel.classList.remove("is-open");
+    sortBackdrop.hidden = true;
+  };
+  if (openFiltersBtn && filtersPanel && filtersBackdrop) {
+    openFiltersBtn.addEventListener("click", () => {
+      closeCategoryBrowser();
+      closeSort();
+      filtersPanel.classList.add("is-open");
+      filtersBackdrop.hidden = false;
+    });
+  }
+  if (openCategoryBrowserBtn && categoryBrowserPanel && categoryBrowserBackdrop) {
+    openCategoryBrowserBtn.addEventListener("click", () => {
+      closeFilters();
+      closeSort();
+      categoryBrowserPanel.classList.add("is-open");
+      categoryBrowserBackdrop.hidden = false;
+    });
+  }
+  if (openSortBtn && sortPanel && sortBackdrop) {
+    openSortBtn.addEventListener("click", () => {
+      closeFilters();
+      closeCategoryBrowser();
+      sortPanel.classList.add("is-open");
+      sortBackdrop.hidden = false;
+    });
+  }
+  if (closeFiltersBtn) closeFiltersBtn.addEventListener("click", closeFilters);
+  if (filtersBackdrop) filtersBackdrop.addEventListener("click", closeFilters);
+  if (closeCategoryBrowserBtn) closeCategoryBrowserBtn.addEventListener("click", closeCategoryBrowser);
+  if (categoryBrowserBackdrop) categoryBrowserBackdrop.addEventListener("click", closeCategoryBrowser);
+  if (closeSortBtn) closeSortBtn.addEventListener("click", closeSort);
+  if (cancelSortBtn) cancelSortBtn.addEventListener("click", closeSort);
+  if (sortBackdrop) sortBackdrop.addEventListener("click", closeSort);
+
+  appEl.querySelectorAll('input[name="brandSortMode"]').forEach((input) => {
+    input.addEventListener("change", () => {
+      const next = String(input.value || "popular");
+      state.catalogSort = next;
       renderBrandSubcategoryPage(state, appEl, brandSlug, subcategorySlug, renderProductCardFn, bindSearch);
     });
   });
-
-  const minPriceFilter = document.getElementById("brandMinPriceFilter");
-  const maxPriceFilter = document.getElementById("brandMaxPriceFilter");
-  const applyPrice = () => {
-    state.filters.minPrice = minPriceFilter?.value?.trim?.() || "";
-    state.filters.maxPrice = maxPriceFilter?.value?.trim?.() || "";
-    renderBrandSubcategoryPage(state, appEl, brandSlug, subcategorySlug, renderProductCardFn, bindSearch);
-  };
-  if (minPriceFilter) minPriceFilter.addEventListener("change", applyPrice);
-  if (maxPriceFilter) maxPriceFilter.addEventListener("change", applyPrice);
-
-  const resetBtn = document.getElementById("brandResetFiltersBtn");
-  if (resetBtn) {
-    resetBtn.addEventListener("click", () => {
-      resetFacetFilters(state.filters);
-      renderBrandSubcategoryPage(state, appEl, brandSlug, subcategorySlug, renderProductCardFn, bindSearch);
-    });
-  }
 
   appEl.querySelectorAll("[data-fav-toggle]").forEach((btn) => {
     btn.addEventListener("click", (event) => {
@@ -1111,9 +1670,24 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
       toggleFavorite(state, id);
       const active = isFavorite(state, id);
       btn.classList.toggle("is-active", active);
-      btn.textContent = active ? "♥" : "♡";
+      btn.innerHTML = favoriteIconMarkup(active);
     });
   });
+  appEl.querySelectorAll("[data-card-buy]").forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const id = String(btn.dataset.cardBuy || "").trim();
+      if (!id) return;
+      const cartQtyEl = document.getElementById("cartQty");
+      const miniCartEl = document.getElementById("miniCart");
+      addToCart(state, id, cartQtyEl, miniCartEl);
+      syncCardBuyBadges(state, appEl);
+    });
+  });
+  syncCardBuyBadges(state, appEl);
+  bindProductCardGalleries(appEl);
+  rebalanceProductCardMedia(appEl);
 }
 
 export function getBrandsList(state) {
@@ -1123,15 +1697,14 @@ export function getBrandsList(state) {
 export function renderBrandsBlock(state, slugifyFn, imageTagFn) {
   const brands = getBrandsList(state);
   return `
-    <h2 class="h1" style="margin-top: 3rem;">Бренды</h2>
+    <h2 class="h1">Бренды</h2>
     <div class="h1-line"></div>
-    <section class="category-grid">
+    <section class="category-grid brands-grid">
       ${brands
         .map(
           (brand) => `
-        <a class="category-card" href="#/brands/${slugifyFn(brand)}">
+        <a class="category-card brand-card" href="#/brands/${slugifyFn(brand)}">
           ${imageTagFn(getBrandLogo(brand), brand, getBrandLogoClass(brand), PLACEHOLDER_IMAGE)}
-          <h3>${brand}</h3>
         </a>
       `
         )
@@ -1139,5 +1712,3 @@ export function renderBrandsBlock(state, slugifyFn, imageTagFn) {
     </section>
   `;
 }
-
-
