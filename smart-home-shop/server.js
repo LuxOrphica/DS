@@ -65,6 +65,7 @@ const { registerPublicRoutes } = require("./routes/public-routes");
 const { registerAdminRoutes } = require("./routes/admin-routes");
 const { registerAdminSessionRoutes } = require("./routes/admin-session-routes");
 const { registerPageRoutes } = require("./routes/page-routes");
+const { registerDbUploadRoute } = require("./routes/db-upload-route");
 const { createAdminAuthMiddleware } = require("./middleware/admin-auth");
 const { createAdminSessionStore } = require("./services/admin-session-store");
 const { createRequestContextMiddleware } = require("./middleware/request-context");
@@ -229,6 +230,7 @@ registerAdminRoutes(app, {
   listAdminAuditLog
 });
 
+registerDbUploadRoute(app, { dbPath, adminToken });
 registerPageRoutes(app, __dirname);
 
 app.use((err, req, res, next) => {
