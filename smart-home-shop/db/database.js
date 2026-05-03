@@ -471,7 +471,12 @@ function initSchema() {
       max_load TEXT,
       is_conflict INTEGER DEFAULT 0,
       conflict_note TEXT DEFAULT '',
-      updated_at TEXT NOT NULL
+      updated_at TEXT NOT NULL,
+      entity_type TEXT DEFAULT 'product',
+      commercial_group TEXT DEFAULT '',
+      commercial_subgroup TEXT DEFAULT '',
+      source_category TEXT DEFAULT '',
+      subcategory TEXT DEFAULT ''
     );
 
     CREATE TABLE IF NOT EXISTS orders (
@@ -731,6 +736,11 @@ function initSchema() {
   addColumnIfMissing("products", "conflict_note", "TEXT DEFAULT ''");
   addColumnIfMissing("products", "price_currency", "TEXT DEFAULT 'RUB'");
   addColumnIfMissing("products", "price_rub", "REAL");
+  addColumnIfMissing("products", "entity_type", "TEXT DEFAULT 'product'");
+  addColumnIfMissing("products", "commercial_group", "TEXT DEFAULT ''");
+  addColumnIfMissing("products", "commercial_subgroup", "TEXT DEFAULT ''");
+  addColumnIfMissing("products", "source_category", "TEXT DEFAULT ''");
+  addColumnIfMissing("products", "subcategory", "TEXT DEFAULT ''");
   addColumnIfMissing("orders", "customer_email", "TEXT DEFAULT ''");
   addColumnIfMissing("orders", "payment_status", "TEXT DEFAULT 'unpaid'");
   addColumnIfMissing("orders", "delivery_method", "TEXT DEFAULT ''");
