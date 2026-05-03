@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: smart-home-shop
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3030"
+      - key: TRUST_PROXY
+        value: "1"
+      - key: ADMIN_TOKEN
+        generateValue: true
+      - key: DISABLE_ADMIN_AUTH
+        value: "0"
+    disk:
+      name: shop-data
+      mountPath: /app/data
+      sizeGB: 1
