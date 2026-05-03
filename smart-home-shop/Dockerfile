@@ -6,6 +6,8 @@ RUN npm ci --omit=dev
 
 COPY . .
 
+RUN mkdir -p /app/data
+
 ENV NODE_ENV=production
 ENV PORT=3030
 
