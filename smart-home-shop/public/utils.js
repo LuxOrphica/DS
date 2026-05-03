@@ -1,27 +1,41 @@
-// Форматирование цены
 export function formatPrice(v) {
   const n = Number(v);
   if (!Number.isFinite(n) || n <= 0) return "Цена по запросу";
-  return `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 1 }).format(n)} руб.`;
+  return `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 1 }).format(n)} ₽`;
 }
 
-// Создание URL-дружественной строки
+export function formatPriceByCurrency(value, currency = "RUB") {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return "Цена по запросу";
+  if (String(currency || "RUB").toUpperCase() === "EUR") {
+    return `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 }).format(n)} €`;
+  }
+  return formatPrice(n);
+}
+
+export function getProductPriceView(product) {
+  const currency = String(product?.priceCurrency || "RUB").toUpperCase();
+  const value = Number(product?.priceValue ?? product?.price);
+  const rub = Number(product?.price ?? product?.priceRub ?? 0);
+  const main = formatPriceByCurrency(value, currency);
+  const approxRub = currency === "EUR" && Number.isFinite(rub) && rub > 0 ? `≈ ${formatPrice(rub)}` : "";
+  return { currency, main, approxRub, rub };
+}
+
 export function slugify(text) {
   return String(text || "")
     .normalize("NFKD")
     .toLowerCase()
     .replace(/\s+/g, "-")
-    .replace(/[^a-zР°-СЏС'0-9-]/gi, "")
+    .replace(/[^a-zа-яё0-9-]/gi, "")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
 }
 
-// Нормализация текста
 export function normText(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
 
-// Парсинг JSON списка
 export function parseJsonList(raw) {
   if (!raw) return [];
   if (Array.isArray(raw)) return raw;
@@ -33,7 +47,6 @@ export function parseJsonList(raw) {
   }
 }
 
-// Сброс фильтров
 export function resetFacetFilters(filters) {
   filters.brands = [];
   filters.types = [];
@@ -56,7 +69,6 @@ export function resetFacetFilters(filters) {
   filters.maxPrice = "";
 }
 
-// Разделение хлебных крошек
 export function splitBreadcrumbs(value) {
   return String(value || "")
     .split("/")
@@ -65,12 +77,10 @@ export function splitBreadcrumbs(value) {
     .filter((x) => x.toLowerCase() !== "товары");
 }
 
-// Подсчет уникальных значений с сортировкой
 export function uniqueSorted(values) {
   return Array.from(new Set(values.map(normText).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ru"));
 }
 
-// Подсчет фасетов (количества для фильтров)
 export function facetCounts(items, projector) {
   const map = new Map();
   for (const item of items) {
@@ -83,16 +93,6 @@ export function facetCounts(items, projector) {
     .sort((a, b) => a.value.localeCompare(b.value, "ru"));
 }
 
-// Проверка соответствия товара поисковому запросу
-export function productMatchesSearch(product, search) {
-  const q = String(search || "").trim().toLowerCase();
-  if (!q) return true;
-  const aliases = extractArticleAliases(product && product.article);
-  const hay = [product.name, product.article, product.id, ...aliases].map((x) => String(x || "").toLowerCase());
-  return hay.some((x) => x.includes(q));
-}
-
-// Разбор артикулов-алиасов: "CW-MSD / CW-MSD-II" -> ["CW-MSD", "CW-MSD-II"]
 export function extractArticleAliases(rawArticle) {
   const raw = String(rawArticle || "").trim();
   if (!raw) return [];
@@ -103,10 +103,7 @@ export function extractArticleAliases(rawArticle) {
   const out = [];
   const seen = new Set();
   for (const chunk of chunks) {
-    const clean = chunk
-      .replace(/\s+/g, " ")
-      .replace(/[()]+/g, "")
-      .trim();
+    const clean = chunk.replace(/\s+/g, " ").replace(/[()]+/g, "").trim();
     if (!clean) continue;
     const key = clean.toUpperCase();
     if (seen.has(key)) continue;
@@ -116,7 +113,14 @@ export function extractArticleAliases(rawArticle) {
   return out;
 }
 
-// Создание хлебных крошек
+export function productMatchesSearch(product, search) {
+  const q = String(search || "").trim().toLowerCase();
+  if (!q) return true;
+  const aliases = extractArticleAliases(product && product.article);
+  const hay = [product.name, product.article, product.id, ...aliases].map((x) => String(x || "").toLowerCase());
+  return hay.some((x) => x.includes(q));
+}
+
 export function breadCrumbs(parts) {
   const html = parts
     .map((part, index) => {
@@ -127,37 +131,40 @@ export function breadCrumbs(parts) {
   return `<div class="breadcrumbs">${html}</div>`;
 }
 
-// Создание заголовка страницы
 export function pageTitle(text) {
   return `<h1 class="h1">${text}</h1><div class="h1-line"></div>`;
 }
 
-// Создание строки поиска
 export function searchRow(value = "") {
   return `
     <div class="search-row">
-      <input class="input" id="searchInput" value="${value}" placeholder="Поиск по каталогу" />
-      <button class="button button-outline" id="searchBtn" type="button">Найти</button>
+      <div class="search-field">
+        <input class="input search-input" id="searchInput" value="${value}" placeholder="Поиск по каталогу" />
+        <button class="search-clear-btn" id="searchClearBtn" type="button" aria-label="Очистить поиск" hidden>×</button>
+      </div>
     </div>
   `;
 }
 
-// Создание тега изображения
 export function imageTag(src, alt, className = "", placeholderImage = "") {
   const cls = className ? ` class="${className}"` : "";
-  // Всегда используем заглушку если src пустой или внешний URL
-  const finalSrc = (!src || src.startsWith('https://via.placeholder.com')) ? placeholderImage : src;
-  return `<img${cls} src="${finalSrc}" alt="${alt}" loading="lazy" onerror="this.src='${placeholderImage}'" />`;
+  const finalSrc = (!src || src.startsWith("https://via.placeholder.com")) ? placeholderImage : src;
+  const placeholderAttr = placeholderImage ? ` data-placeholder-src="${placeholderImage}"` : "";
+  return `<img${cls} src="${finalSrc}" alt="${alt}" loading="lazy"${placeholderAttr} />`;
 }
 
-// Установка fallback для изображения
+export function favoriteIconMarkup(active) {
+  return active
+    ? '<span class="material-symbols-rounded msi" aria-hidden="true">favorite</span>'
+    : '<span class="material-symbols-rounded msi" aria-hidden="true">favorite_border</span>';
+}
+
 export function setImageFallback(img, placeholderImage) {
   if (img.dataset.fallbackApplied === "1") return;
   img.dataset.fallbackApplied = "1";
   img.src = placeholderImage;
 }
 
-// Нормализация базового имени варианта
 export function normalizeVariantBaseName(name) {
   return String(name || "")
     .replace(/\([^)]*\)/g, "")
@@ -167,11 +174,10 @@ export function normalizeVariantBaseName(name) {
     .toLowerCase();
 }
 
-// Парсинг строки характеристик
 export function parseSpecsString(specsData, extra) {
-  String(specsData)
+  String(specsData || "")
     .split(";")
-    .map((part) => part.trim())
+    .map((spec) => spec.trim())
     .filter(Boolean)
     .forEach((spec) => {
       const idx = spec.indexOf(":");
@@ -184,42 +190,90 @@ export function parseSpecsString(specsData, extra) {
 }
 
 function formatMetricNumber(raw) {
-  const s = String(raw || "").trim().replace(",", ".");
+  const s = String(raw || "").replace(",", ".").trim();
   const n = Number(s);
   if (!Number.isFinite(n)) return "";
   if (Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n));
   return String(Math.round(n * 100) / 100).replace(".", ",");
 }
 
-export function normalizeMeasurementValue(kind, rawValue) {
-  const raw = String(rawValue || "").trim();
+export function normalizeMeasurementValue(kind, raw) {
   if (!raw) return "";
-  const lower = raw.toLowerCase().replace(/\s+/g, " ");
-  const match = lower.match(/(-?\d+(?:[.,]\d+)?)\s*([a-z\u0430-\u044f\u0451%\u00b0]+)/i);
-  if (!match) return raw;
+  const lower = String(raw).toLowerCase().replace(/\s+/g, " ");
+  const match = lower.match(/(-?\d+(?:[.,]\d+)?)\s*([a-zа-яё%°]+)/i);
+  if (!match) return fixMojibake(String(raw).trim());
 
   const num = formatMetricNumber(match[1]);
-  if (!num) return raw;
+  if (!num) return fixMojibake(String(raw).trim());
+
   const unitRaw = String(match[2] || "").toLowerCase();
 
   if (kind === "voltage") {
-    if (/^kv|^\u043a\u0432/.test(unitRaw)) return `${num} \u043a\u0412`;
-    if (/^mv|^\u043c\u0432/.test(unitRaw)) return `${num} \u043c\u0412`;
-    if (/^v|^\u0432/.test(unitRaw)) return `${num} \u0412`;
+    if (/^(kv|кв)/.test(unitRaw)) return `${num} kV`;
+    if (/^(mv|мв)/.test(unitRaw)) return `${num} mV`;
+    if (/^(v|в)/.test(unitRaw)) return `${num} V`;
   }
 
   if (kind === "power") {
-    if (/^kw|^\u043a\u0432\u0442/.test(unitRaw)) return `${num} \u043a\u0412\u0442`;
-    if (/^mw|^\u043c\u0432\u0442/.test(unitRaw)) return `${num} \u043c\u0412\u0442`;
-    if (/^w|^\u0432\u0442/.test(unitRaw)) return `${num} \u0412\u0442`;
+    if (/^(kw|квт)/.test(unitRaw)) return `${num} kW`;
+    if (/^(mw|мвт)/.test(unitRaw)) return `${num} mW`;
+    if (/^(w|вт)/.test(unitRaw)) return `${num} W`;
   }
 
   if (kind === "current") {
-    if (/^ma|^\u043ca|^\u043c\u0430/.test(unitRaw)) return `${num} \u043c\u0410`;
-    if (/^a|^\u0430/.test(unitRaw)) return `${num} \u0410`;
+    if (/^(ma|мa|ма)/.test(unitRaw)) return `${num} mA`;
+    if (/^(a|а)/.test(unitRaw)) return `${num} A`;
   }
 
-  return raw;
+  return fixMojibake(String(raw).trim());
 }
 
+export function fixMojibake(value) {
+  if (typeof value !== 'string') return value;
+  return value.replace(/ /g, ' ').replace(/\s+/g, ' ').trim();
+}
 
+export function applySafeHtml(el, html) {
+  if (!el) return;
+  el.innerHTML = fixMojibake(String(html || ""));
+}
+
+function sanitizeUnknown(value) {
+  if (value == null) return value;
+  if (typeof value === "string") return fixMojibake(value);
+  if (Array.isArray(value)) return value.map(sanitizeUnknown);
+  if (typeof value === "object") {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) out[k] = sanitizeUnknown(v);
+    return out;
+  }
+  return value;
+}
+
+export function sanitizeCatalogProduct(product) {
+  if (!product || typeof product !== "object") return product;
+
+  const out = sanitizeUnknown(product);
+
+  out.systemType = fixMojibake(out.systemType || "");
+  out.protocol = fixMojibake(out.protocol || "");
+  out.mounting = fixMojibake(out.mounting || "");
+  out.sensorType = fixMojibake(out.sensorType || "");
+  out.indoorOutdoor = fixMojibake(out.indoorOutdoor || "");
+  out.ipRating = fixMojibake(out.ipRating || "");
+  out.ioCount = fixMojibake(out.ioCount || "");
+  out.webInterface = fixMojibake(out.webInterface || "");
+  out.scenarioSupport = fixMojibake(out.scenarioSupport || "");
+  out.loadType = fixMojibake(out.loadType || "");
+  out.maxLoad = fixMojibake(out.maxLoad || "");
+  out.channels = fixMojibake(out.channels || "");
+  out.supplyVoltage = normalizeMeasurementValue("voltage", out.supplyVoltage || "");
+  out.nominalCurrent = normalizeMeasurementValue("current", out.nominalCurrent || "");
+  out.nominalPower = normalizeMeasurementValue("power", out.nominalPower || "");
+
+  if (!Array.isArray(out.attributes)) out.attributes = [];
+  if (!Array.isArray(out.gallery)) out.gallery = [];
+  if (!Array.isArray(out.documents)) out.documents = [];
+
+  return out;
+}

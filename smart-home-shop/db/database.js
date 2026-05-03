@@ -267,12 +267,34 @@ function hasActiveVariantConflict(productStatus, variantsTotal, activeVariants) 
   );
 }
 
+const ALLOWED_TABLES = new Set([
+  "products", "orders", "product_variants", "product_media", "product_documents",
+  "product_tabs", "product_tab_blocks", "product_function_categories",
+  "product_brand_categories", "brands", "functional_categories", "brand_categories",
+  "brand_native_categories", "product_attributes", "attribute_definitions",
+  "category_attribute_templates", "exchange_rates", "audit_log"
+]);
+
+const SAFE_IDENTIFIER_RE = /^[a-z_][a-z0-9_]*$/i;
+
+function assertSafeIdentifier(value, label) {
+  if (!SAFE_IDENTIFIER_RE.test(String(value || ""))) {
+    throw new Error(`Unsafe SQL identifier for ${label}: ${value}`);
+  }
+}
+
 function hasColumn(table, column) {
+  assertSafeIdentifier(table, "table");
+  assertSafeIdentifier(column, "column");
+  if (!ALLOWED_TABLES.has(table)) throw new Error(`Unknown table: ${table}`);
   const rows = db.prepare(`PRAGMA table_info(${table})`).all();
   return rows.some((r) => r.name === column);
 }
 
 function addColumnIfMissing(table, column, definition) {
+  assertSafeIdentifier(table, "table");
+  assertSafeIdentifier(column, "column");
+  if (!ALLOWED_TABLES.has(table)) throw new Error(`Unknown table: ${table}`);
   if (!hasColumn(table, column)) {
     db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
   }
@@ -658,6 +680,8 @@ function initSchema() {
 
     CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
     CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);
+    CREATE INDEX IF NOT EXISTS idx_orders_customer_phone ON orders(customer_phone);
+    CREATE INDEX IF NOT EXISTS idx_orders_customer_email ON orders(customer_email);
     CREATE INDEX IF NOT EXISTS idx_variants_product ON product_variants(product_id);
     CREATE INDEX IF NOT EXISTS idx_media_product ON product_media(product_id);
     CREATE INDEX IF NOT EXISTS idx_docs_product ON product_documents(product_id);
@@ -1541,6 +1565,7 @@ function listProducts() {
         status,
         price_text,
         source_url AS sourceUrl,
+        subcategory,
         is_extra,
         COALESCE(is_brand_featured, 0) AS isBrandFeatured,
         COALESCE(is_conflict, 0) AS isConflict,

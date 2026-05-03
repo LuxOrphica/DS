@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e8edf7"/>
+      <stop offset="100%" stop-color="#d8e1f2"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#bg)"/>
+  <rect x="220" y="220" width="760" height="460" rx="24" fill="#ffffff" opacity="0.92"/>
+  <text x="600" y="360" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#1e2a44">Wiren Board</text>
+  <text x="600" y="440" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="600" fill="#2c3f68">IR-TX</text>
+  <text x="600" y="500" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#5a6d90">IR-TX</text>
+  <text x="600" y="565" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#7c8aa8">Локальная заглушка до получения оригинального фото</text>
+</svg>

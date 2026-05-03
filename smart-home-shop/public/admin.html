@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Админка - делаемСЕТИ</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      .admin-wrap { width: min(1380px, 96%); margin: 20px auto; }
+      .admin-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+      .admin-card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px; margin-bottom:12px; }
+      .admin-tabs { display:flex; gap:8px; margin-bottom:10px; }
+      .admin-table { width:100%; border-collapse:collapse; font-size:13px; }
+      .admin-table th, .admin-table td { border-top:1px solid #edf2f7; padding:8px 6px; text-align:left; vertical-align:top; }
+      .admin-table thead th { border-top:none; color:var(--muted); font-weight:600; }
+      .admin-grid { display:grid; grid-template-columns:1fr; gap:12px; }
+      .search-line { display:flex; gap:8px; }
+      .edit-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:8px; }
+      .edit-grid .full { grid-column: span 2; }
+      .admin-actions { display:flex; gap:8px; margin-top:8px; align-items:center; }
+    </style>
+  </head>
+  <body>
+    <div class="admin-wrap">
+      <div class="admin-head">
+        <h1 class="h1">Админка</h1>
+        <a class="button button-outline" href="/">На сайт</a>
+      </div>
+      <div class="h1-line"></div>
+
+      <div class="admin-card">
+        <div class="admin-tabs">
+          <button id="tabProducts" class="button button-outline" type="button">Товары</button>
+          <button id="tabOrders" class="button button-outline" type="button">Заказы</button>
+        </div>
+        <div id="stats" class="note"></div>
+      </div>
+
+      <section id="productsSection" class="admin-card">
+        <div class="search-line">
+          <input id="searchQ" class="input" placeholder="Поиск по товару / артикулу / категории" />
+          <button id="searchBtn" class="button" type="button">Найти</button>
+        </div>
+        <div style="overflow:auto; margin-top:10px;">
+          <table class="admin-table" id="productsTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Артикул</th>
+                <th>Название</th>
+                <th>Категория</th>
+                <th>Цена</th>
+                <th>Описание</th>
+                <th>Документы</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="editorSection" class="admin-card" style="display:none;">
+        <h3 style="margin:0 0 8px;">Редактирование товара</h3>
+        <form id="editForm" class="edit-grid">
+          <input class="input" name="id" placeholder="ID" readonly />
+          <input class="input" name="article" placeholder="Артикул" />
+          <input class="input full" name="name" placeholder="Название" />
+          <input class="input" name="price" placeholder="Цена" />
+          <input class="input" name="priceText" placeholder="Текст цены" />
+          <input class="input" name="category" placeholder="Категория" />
+          <input class="input" name="groupName" placeholder="Группа" />
+          <input class="input" name="brand" placeholder="Бренд" />
+          <input class="input full" name="image" placeholder="Ссылка на изображение" />
+          <input class="input full" name="sourceUrl" placeholder="Ссылка на источник" />
+          <textarea class="input full" name="description" placeholder="Описание" style="height:100px;padding:10px;"></textarea>
+          <textarea class="input full" name="specs" placeholder="Характеристики (кратко)" style="height:90px;padding:10px;"></textarea>
+          <textarea class="input full" name="attributesJson" placeholder='attributesJson: [{"name":"...","value":"..."}]' style="height:90px;padding:10px;"></textarea>
+          <textarea class="input full" name="documentsJson" placeholder='documentsJson: [{"title":"...","url":"...","meta":"..."}]' style="height:90px;padding:10px;"></textarea>
+        </form>
+        <div class="admin-actions">
+          <button id="saveBtn" class="button" type="button">Сохранить</button>
+          <button id="cancelBtn" class="button button-outline" type="button">Закрыть</button>
+          <div id="editMsg" class="note"></div>
+        </div>
+      </section>
+
+      <section id="ordersSection" class="admin-card" style="display:none;">
+        <div style="overflow:auto;">
+          <table class="admin-table" id="ordersTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Дата</th>
+                <th>Клиент</th>
+                <th>Телефон</th>
+                <th>Адрес</th>
+                <th>Оплата</th>
+                <th>Позиции</th>
+                <th>Сумма</th>
+                <th>Статус</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <script src="/admin.js"></script>
+  </body>
+</html>

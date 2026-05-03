@@ -7,7 +7,7 @@ import { getCategoryFacetProfile, applyFacetProfile } from "./facet-profiles.js"
 import { createFacetHelpers } from "./facet-utils.js";
 
 const HIDDEN_BRAND_KEYS = new Set([
-  "\u0434\u0435\u043b\u0430\u0435\u043c \u0441\u0435\u0442\u0438"
+  "делаем сети"
 ]);
 
 const BRAND_LOGO_BY_NAME = new Map([
@@ -29,79 +29,79 @@ const BRAND_LOGO_CLASS_BY_NAME = new Map([
 ]);
 
 const LARNITECH_NATIVE_SECTIONS = [
-  "\u0421\u0435\u0440\u0438\u044f Metaforsa",
-  "DIN-\u0440\u0435\u0435\u0447\u043d\u043e\u0435 \u043e\u0431\u043e\u0440\u0443\u0434\u043e\u0432\u0430\u043d\u0438\u0435",
-  "\u041e\u0431\u043e\u0440\u0443\u0434\u043e\u0432\u0430\u043d\u0438\u0435 \u0434\u043b\u044f \u043f\u043e\u0434\u0440\u043e\u0437\u0435\u0442\u043d\u044b\u0445 \u043a\u043e\u0440\u043e\u0431\u043e\u043a",
-  "\u0414\u0430\u0442\u0447\u0438\u043a\u0438",
+  "Серия Metaforsa",
+  "DIN-реечное оборудование",
+  "Оборудование для подрозетных коробок",
+  "Датчики",
   "Multiroom",
   "Wireless",
-  "\u041f\u0440\u043e\u0447\u0435\u0435"
+  "Прочее"
 ];
 
 const HITE_PRO_NATIVE_SECTIONS = [
-  "\u0418\u0441\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c\u043d\u044b\u0435 \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0430",
-  "\u0411\u043b\u043e\u043a\u0438 \u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044f",
-  "\u0414\u0430\u0442\u0447\u0438\u043a\u0438",
-  "\u0423\u043c\u043d\u044b\u0439 \u0434\u043e\u043c \u043f\u043e\u0434 \u043a\u043b\u044e\u0447",
-  "\u041a\u043e\u043c\u043f\u043b\u0435\u043a\u0442\u044b",
-  "\u0423\u043c\u043d\u044b\u0435 \u0437\u0430\u043c\u043a\u0438",
-  "\u0410\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0438\u0435 \u0432\u043e\u0440\u043e\u0442\u0430",
-  "\u0423\u0441\u0438\u043b\u0438\u0442\u0435\u043b\u0438 \u0441\u0438\u0433\u043d\u0430\u043b\u0430 3G/4G",
-  "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b",
-  "\u041a\u043e\u043d\u0442\u0440\u043e\u043b\u043b\u0435\u0440\u044b",
-  "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b",
-  "\u0422\u0435\u0440\u043c\u043e\u0441\u0442\u0430\u0442\u044b",
-  "\u041f\u0440\u043e\u0447\u0435\u0435"
+  "Исполнительные устройства",
+  "Блоки управления",
+  "Датчики",
+  "Умный дом под ключ",
+  "Комплекты",
+  "Умные замки",
+  "Автоматические ворота",
+  "Усилители сигнала 3G/4G",
+  "Реле и диммеры",
+  "Контроллеры",
+  "Аксессуары",
+  "Термостаты",
+  "Прочее"
 ];
 
 const LOXONE_NATIVE_SECTIONS = [
-  "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b",
-  "\u0410\u0443\u0434\u0438\u043e / Multiroom",
-  "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b",
-  "\u042d\u043d\u0435\u0440\u0433\u043e\u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433",
-  "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"
+  "Аксессуары",
+  "Аудио / Multiroom",
+  "Реле и диммеры",
+  "Энергомониторинг",
+  "Датчики"
 ];
 
 const LOXONE_SECTION_BY_SUBCATEGORY = new Map([
-  ["\u0430\u0443\u0434\u0438\u043e", "\u0410\u0443\u0434\u0438\u043e / Multiroom"],
-  ["\u0430\u043a\u0443\u0441\u0442\u0438\u043a\u0430", "\u0410\u0443\u0434\u0438\u043e / Multiroom"],
-  ["multiroom", "\u0410\u0443\u0434\u0438\u043e / Multiroom"],
+  ["аудио", "Аудио / Multiroom"],
+  ["акустика", "Аудио / Multiroom"],
+  ["multiroom", "Аудио / Multiroom"],
 
-  ["\u043c\u0438\u043d\u0438\u0441\u0435\u0440\u0432\u0435\u0440\u044b \u0438 \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043d\u0438\u044f", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
-  ["\u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u0435", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
-  ["\u0440\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
-  ["\u0432\u044b\u043a\u043b\u044e\u0447\u0430\u0442\u0435\u043b\u0438 \u0438 \u043f\u0430\u043d\u0435\u043b\u0438", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
-  ["\u043a\u043e\u043d\u0442\u0440\u043e\u043b\u043b\u0435\u0440\u044b \u043e\u0441\u0432\u0435\u0449\u0435\u043d\u0438\u044f", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
-  ["led-\u043b\u0435\u043d\u0442\u044b", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
-  ["\u0441\u0432\u0435\u0442\u0438\u043b\u044c\u043d\u0438\u043a\u0438", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
-  ["\u0448\u0442\u043e\u0440\u044b", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
-  ["\u0441\u043e\u0444\u0442 \u0438 \u0441\u0435\u0440\u0432\u0438\u0441\u044b", "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b"],
+  ["минисерверы и расширения", "Реле и диммеры"],
+  ["управление", "Реле и диммеры"],
+  ["реле и диммеры", "Реле и диммеры"],
+  ["выключатели и панели", "Реле и диммеры"],
+  ["контроллеры освещения", "Реле и диммеры"],
+  ["led-ленты", "Реле и диммеры"],
+  ["светильники", "Реле и диммеры"],
+  ["шторы", "Реле и диммеры"],
+  ["софт и сервисы", "Реле и диммеры"],
 
-  ["\u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433 \u044d\u043d\u0435\u0440\u0433\u0438\u0438", "\u042d\u043d\u0435\u0440\u0433\u043e\u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433"],
-  ["\u0441\u0447\u0435\u0442\u0447\u0438\u043a\u0438", "\u042d\u043d\u0435\u0440\u0433\u043e\u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433"],
-  ["\u0440\u0435\u043b\u0435 \u043d\u0430\u0433\u0440\u0443\u0437\u043a\u0438", "\u042d\u043d\u0435\u0440\u0433\u043e\u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433"],
-  ["\u0431\u043b\u043e\u043a\u0438 \u043f\u0438\u0442\u0430\u043d\u0438\u044f", "\u042d\u043d\u0435\u0440\u0433\u043e\u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433"],
+  ["мониторинг энергии", "Энергомониторинг"],
+  ["счетчики", "Энергомониторинг"],
+  ["реле нагрузки", "Энергомониторинг"],
+  ["блоки питания", "Энергомониторинг"],
 
-  ["\u0434\u0430\u0442\u0447\u0438\u043a\u0438", "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"],
-  ["\u0434\u0430\u0442\u0447\u0438\u043a\u0438 \u043a\u043b\u0438\u043c\u0430\u0442\u0430", "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"],
-  ["\u043a\u043e\u043d\u0442\u0440\u043e\u043b\u044c \u0434\u043e\u0441\u0442\u0443\u043f\u0430", "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"],
-  ["\u043a\u043d\u043e\u043f\u043a\u0438 \u0438 \u0431\u0440\u0435\u043b\u043e\u043a\u0438", "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"],
-  ["\u0441\u0438\u0440\u0435\u043d\u044b \u0438 \u0442\u0440\u0435\u0432\u043e\u0436\u043d\u044b\u0435 \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0430", "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"],
-  ["\u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u0435 \u043a\u043e\u043d\u0434\u0438\u0446\u0438\u043e\u043d\u0435\u0440\u0430\u043c\u0438", "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"],
-  ["\u043a\u043e\u043d\u0442\u0440\u043e\u043b\u043b\u0435\u0440\u044b \u043a\u043b\u0438\u043c\u0430\u0442\u0430", "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"],
-  ["\u043f\u0440\u0438\u0432\u043e\u0434\u044b \u0438 \u043a\u043b\u0430\u043f\u0430\u043d\u044b", "\u0414\u0430\u0442\u0447\u0438\u043a\u0438"],
+  ["датчики", "Датчики"],
+  ["датчики климата", "Датчики"],
+  ["контроль доступа", "Датчики"],
+  ["кнопки и брелоки", "Датчики"],
+  ["сирены и тревожные устройства", "Датчики"],
+  ["управление кондиционерами", "Датчики"],
+  ["контроллеры климата", "Датчики"],
+  ["приводы и клапаны", "Датчики"],
 
-  ["\u0430\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b", "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b"],
-  ["\u043a\u0430\u0431\u0435\u043b\u0438 \u0438 \u043f\u0435\u0440\u0435\u0445\u043e\u0434\u043d\u0438\u043a\u0438", "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b"],
-  ["\u043a\u043b\u0435\u043c\u043c\u044b \u0438 \u043a\u043e\u043d\u043d\u0435\u043a\u0442\u043e\u0440\u044b", "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b"],
-  ["\u043a\u0440\u0435\u043f\u0435\u0436 \u0438 \u043c\u043e\u043d\u0442\u0430\u0436", "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b"],
-  ["\u0430\u043d\u0442\u0435\u043d\u043d\u044b", "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b"]
+  ["аксессуары", "Аксессуары"],
+  ["кабели и переходники", "Аксессуары"],
+  ["клеммы и коннекторы", "Аксессуары"],
+  ["крепеж и монтаж", "Аксессуары"],
+  ["антенны", "Аксессуары"]
 ]);
 
 function normalizeBrandKey(raw) {
   return String(raw || "")
     .toLowerCase()
-    .replace(/[\s\u00A0]+/g, " ")
+    .replace(/[\s ]+/g, " ")
     .replace(/[^\p{L}\p{N}\- ]+/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -175,7 +175,7 @@ function getLarnitechNativeSubcategory(product) {
   const articleRaw = String((product && (product.article || product.id)) || "");
   const article = normalizeSku(articleRaw);
   const name = String((product && product.name) || "").toUpperCase();
-  const isSensorByName = /\u0414\u0410\u0422\u0427\u0418\u041a|SENSOR|SENSORS|TEMPERATURE|HUMIDITY|CO2|MOTION|LEAK/i.test(name);
+  const isSensorByName = /ДАТЧИК|SENSOR|SENSORS|TEMPERATURE|HUMIDITY|CO2|MOTION|LEAK/i.test(name);
   const isExplicitSensorSku = (
     article.startsWith("CW") ||
     article.startsWith("WW") ||
@@ -202,13 +202,13 @@ function getLarnitechNativeSubcategory(product) {
     article === "DWHT05" ||
     name.includes("METAFORSA")
   ) {
-    return "\u0421\u0435\u0440\u0438\u044f Metaforsa";
+    return "Серия Metaforsa";
   }
 
-  if (article.startsWith("BW")) return "\u041e\u0431\u043e\u0440\u0443\u0434\u043e\u0432\u0430\u043d\u0438\u0435 \u0434\u043b\u044f \u043f\u043e\u0434\u0440\u043e\u0437\u0435\u0442\u043d\u044b\u0445 \u043a\u043e\u0440\u043e\u0431\u043e\u043a";
+  if (article.startsWith("BW")) return "Оборудование для подрозетных коробок";
 
   if (isExplicitSensorSku || isSensorByName) {
-    return "\u0414\u0430\u0442\u0447\u0438\u043a\u0438";
+    return "Датчики";
   }
 
   if (article.startsWith("FEMP") || article.startsWith("FEIC") || article === "LCP") {
@@ -225,9 +225,9 @@ function getLarnitechNativeSubcategory(product) {
     return "Wireless";
   }
 
-  if (article.startsWith("DE") || article.startsWith("DW")) return "DIN-\u0440\u0435\u0435\u0447\u043d\u043e\u0435 \u043e\u0431\u043e\u0440\u0443\u0434\u043e\u0432\u0430\u043d\u0438\u0435";
+  if (article.startsWith("DE") || article.startsWith("DW")) return "DIN-реечное оборудование";
 
-  return "\u041f\u0440\u043e\u0447\u0435\u0435";
+  return "Прочее";
 }
 
 function getHiteProNativeSubcategory(product) {
@@ -238,12 +238,12 @@ function getHiteProNativeSubcategory(product) {
   const group = String((product && (product.group || product.group_name || "")) || "").toLowerCase();
   const hay = `${name} ${group}`;
 
-  if (/\bsensor\b|\bdatchik\b|датчик/.test(hay)) return "\u0414\u0430\u0442\u0447\u0438\u043a\u0438";
-  if (/\bkit\b|комплект/.test(hay)) return "\u041a\u043e\u043c\u043f\u043b\u0435\u043a\u0442\u044b";
-  if (/\bswitch\b|исполнительн/.test(hay)) return "\u0418\u0441\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c\u043d\u044b\u0435 \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0430";
-  if (/\bgateway\b|\bserver\b|шлюз|сервер/.test(hay)) return "\u0423\u043c\u043d\u044b\u0439 \u0434\u043e\u043c \u043f\u043e\u0434 \u043a\u043b\u044e\u0447";
-  if (/\brelay\b|реле|диммер/.test(hay)) return "\u0411\u043b\u043e\u043a\u0438 \u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044f";
-  return "\u041f\u0440\u043e\u0447\u0435\u0435";
+  if (/\bsensor\b|\bdatchik\b|датчик/.test(hay)) return "Датчики";
+  if (/\bkit\b|комплект/.test(hay)) return "Комплекты";
+  if (/\bswitch\b|исполнительн/.test(hay)) return "Исполнительные устройства";
+  if (/\bgateway\b|\bserver\b|шлюз|сервер/.test(hay)) return "Умный дом под ключ";
+  if (/\brelay\b|реле|диммер/.test(hay)) return "Блоки управления";
+  return "Прочее";
 }
 
 function getLoxoneNativeSubcategory(product) {
@@ -270,12 +270,12 @@ function getLoxoneNativeSubcategory(product) {
     .toLowerCase();
 
   const hasAny = (tokens) => tokens.some((token) => hay.includes(String(token).toLowerCase()));
-  if (hasAny(["audio", "multiroom", "акустик", "колонк", "speaker", "amplifier"])) return "\u0410\u0443\u0434\u0438\u043e / Multiroom";
-  if (hasAny(["энерго", "счетчик", "meter", "monitor", "реле нагрузки", "power"])) return "\u042d\u043d\u0435\u0440\u0433\u043e\u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433";
-  if (hasAny(["датчик", "sensor", "nfc", "доступ", "intercom", "брелок", "сирен", "alarm"])) return "\u0414\u0430\u0442\u0447\u0438\u043a\u0438";
-  if (hasAny(["минисервер", "расширен", "extension", "контроллер", "управлен", "dali", "relay", "диммер", "выключ", "led", "освещ", "штор"])) return "\u0420\u0435\u043b\u0435 \u0438 \u0434\u0438\u043c\u043c\u0435\u0440\u044b";
-  if (hasAny(["аксесс", "кабел", "клемм", "крепеж", "антенн", "sd карт", "card"])) return "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b";
-  return "\u0410\u043a\u0441\u0435\u0441\u0441\u0443\u0430\u0440\u044b";
+  if (hasAny(["audio", "multiroom", "акустик", "колонк", "speaker", "amplifier"])) return "Аудио / Multiroom";
+  if (hasAny(["энерго", "счетчик", "meter", "monitor", "реле нагрузки", "power"])) return "Энергомониторинг";
+  if (hasAny(["датчик", "sensor", "nfc", "доступ", "intercom", "брелок", "сирен", "alarm"])) return "Датчики";
+  if (hasAny(["минисервер", "расширен", "extension", "контроллер", "управлен", "dali", "relay", "диммер", "выключ", "led", "освещ", "штор"])) return "Реле и диммеры";
+  if (hasAny(["аксесс", "кабел", "клемм", "крепеж", "антенн", "sd карт", "card"])) return "Аксессуары";
+  return "Аксессуары";
 }
 
 export function getBrandSubcategory(brandName, product) {
@@ -447,14 +447,14 @@ function formatBrandFacetValue(facetKey, rawValue) {
   const unitsOnly = new Set(["supplyVoltages", "nominalCurrents", "nominalPowers", "maxLoads"]);
   if (!unitsOnly.has(String(facetKey || ""))) return normalized;
   return normalized
-    .replace(/\s*\u043a\u0412\u0442\b/gi, " kW")
-    .replace(/\s*\u043a\u0412\b/gi, " kV")
-    .replace(/\s*\u043c\u0412\u0442\b/gi, " mW")
-    .replace(/\s*\u043c\u0412\b/gi, " mV")
-    .replace(/\s*\u043c\u0410\b/gi, " mA")
-    .replace(/\s*\u0412\u0442\b/gi, " W")
-    .replace(/\s*\u0412\b/gi, " V")
-    .replace(/\s*\u0410\b/gi, " A")
+    .replace(/\s*кВт\b/gi, " kW")
+    .replace(/\s*кВ\b/gi, " kV")
+    .replace(/\s*мВт\b/gi, " mW")
+    .replace(/\s*мВ\b/gi, " mV")
+    .replace(/\s*мА\b/gi, " mA")
+    .replace(/\s*Вт\b/gi, " W")
+    .replace(/\s*В\b/gi, " V")
+    .replace(/\s*А\b/gi, " A")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -1009,7 +1009,7 @@ export function renderBrandPage(state, appEl, brandSlug, renderProductCardFn, bi
   const featured = rankFeatured(visibleProducts.length ? visibleProducts : brandProducts);
   const firstSub = effectiveSubcategories.find((x) => (grouped.get(x) || []).length) || effectiveSubcategories[0] || "";
   const firstSubToken = subcategoryRouteToken(firstSub);
-  const allHref = firstSubToken ? `#/brands/${brandSlug}/${firstSubToken}` : `#/brands/${brandSlug}`;
+  const allHref = firstSubToken ? `/brands/${brandSlug}/${firstSubToken}` : `/brands/${brandSlug}`;
   const brandTitle = safeText(brandName);
 
   applySafeHtml(appEl, `
@@ -1020,26 +1020,26 @@ export function renderBrandPage(state, appEl, brandSlug, renderProductCardFn, bi
       </div>
       <div class="brand-mobile-toolbar">
         <div class="mobile-filters-bar">
-          <a class="button button-outline mobile-categories-btn brand-sections-entry" href="${allHref}" aria-label="Разделы">
-            <i class="fa-solid fa-bars" aria-hidden="true"></i>
+          <a class="subcategory-chip subcategory-chip--trigger brand-sections-entry" href="${allHref}" aria-label="Разделы">
             <span>Разделы</span>
+            <span class="material-symbols-rounded msi" aria-hidden="true">expand_more</span>
           </a>
         </div>
         <section class="subcategory-grid subcategory-grid-inline">
           ${effectiveSubcategories.map((subcategory) => {
             const items = grouped.get(subcategory) || [];
             if (items.length === 0) return "";
-            return `<a class="subcategory-chip" href="#/brands/${brandSlug}/${subcategoryRouteToken(subcategory)}">${safeText(subcategory)} (${items.length})</a>`;
+            return `<a class="subcategory-chip" href="/brands/${brandSlug}/${subcategoryRouteToken(subcategory)}">${safeText(subcategory)} (${items.length})</a>`;
           }).join("")}
         </section>
       </div>
     </div>
     <section class="brand-featured-block">
       <div class="brand-featured-head">
-        <h3 class="brand-featured-title">\u0425\u0438\u0442\u044b \u0431\u0440\u0435\u043d\u0434\u0430</h3>
+        <h3 class="brand-featured-title">Хиты бренда</h3>
       </div>
       <section class="product-grid">
-        ${featured.length ? featured.map((p) => renderProductCardFn(p, (id) => isFavorite(state, id), PLACEHOLDER_IMAGE)).join("") : '<div class="note">\u0422\u043e\u0432\u0430\u0440\u044b \u043f\u043e\u043a\u0430 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b.<\/div>'}
+        ${featured.length ? featured.map((p) => renderProductCardFn(p, (id) => isFavorite(state, id), PLACEHOLDER_IMAGE)).join("") : '<div class="note">Товары пока не найдены.<\/div>'}
       </section>
     </section>
   `);
@@ -1260,15 +1260,15 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
       </div>
       <div class="brand-mobile-toolbar">
         <div class="mobile-filters-bar">
-          <button class="button button-outline mobile-categories-btn" id="brandOpenCategoryBrowserBtn" type="button" aria-label="Разделы">
-            <i class="fa-solid fa-bars" aria-hidden="true"></i>
+          <button class="subcategory-chip subcategory-chip--trigger" id="brandOpenCategoryBrowserBtn" type="button" aria-label="Разделы">
             <span>Разделы</span>
+            <span class="material-symbols-rounded msi" aria-hidden="true">expand_more</span>
           </button>
-          <button class="button button-outline mobile-sort-btn" id="brandOpenSortBtn" type="button" aria-label="Сортировка">
-            <i class="fa-solid fa-arrow-down-wide-short" aria-hidden="true"></i>
+          <button class="subcategory-chip mobile-sort-btn" id="brandOpenSortBtn" type="button" aria-label="Сортировка">
+            <span class="material-symbols-rounded msi" aria-hidden="true">sort</span>
           </button>
-          <button class="button button-outline mobile-filters-btn" id="brandOpenFiltersBtn" type="button" aria-label="\u0424\u0438\u043b\u044c\u0442\u0440\u044b">
-            <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+          <button class="subcategory-chip mobile-filters-btn" id="brandOpenFiltersBtn" type="button" aria-label="Фильтры">
+            <span class="material-symbols-rounded msi" aria-hidden="true">tune</span>
             <span class="mobile-filters-count" id="brandMobileFiltersCount" hidden>0</span>
           </button>
           <div class="mobile-selected-filters" id="brandMobileSelectedFilters"></div>
@@ -1278,7 +1278,7 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
             const count = sectionCounts.get(subcategory) || 0;
             if (count === 0) return "";
             const active = selectedSub === subcategory ? "is-active" : "";
-            return `<a class="subcategory-chip ${active}" href="#/brands/${brandSlug}/${subcategoryRouteToken(subcategory)}">${safeText(subcategory)}</a>`;
+            return `<a class="subcategory-chip ${active}" href="/brands/${brandSlug}/${subcategoryRouteToken(subcategory)}">${safeText(subcategory)}</a>`;
           }).join("")}
         </section>
       </div>
@@ -1289,8 +1289,8 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
       </section>
       <aside class="filters" id="brandFiltersPanel">
         <div class="filters-popup-head">
-          <h4>\u0424\u0438\u043b\u044c\u0442\u0440\u044b</h4>
-          <button class="button button-plain filters-close-btn" id="brandCloseFiltersBtn" type="button" aria-label="\u0417\u0430\u043a\u0440\u044b\u0442\u044c">\u2715</button>
+          <h4>Фильтры</h4>
+          <button class="button button-plain filters-close-btn" id="brandCloseFiltersBtn" type="button" aria-label="Закрыть">✕</button>
         </div>
         <h4>Фильтры</h4>
         <div class="filters-selected" id="brandSelectedFilters"></div>
@@ -1311,28 +1311,28 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
         ${facetVisibility.nominalPowers && shouldShowFacetGroup(brandName, profiledFacets.nominalPowers, selected.nominalPowers, allowSingleFacet) ? renderCheckGroup("Номинальная мощность", "nominalPowers", profiledFacets.nominalPowers, selected.nominalPowers) : ""}
         ${facetVisibility.sensorTypes && shouldShowFacetGroup(brandName, profiledFacets.sensorTypes, selected.sensorTypes, allowSingleFacet) ? renderCheckGroup("Тип датчика", "sensorTypes", profiledFacets.sensorTypes, selected.sensorTypes) : ""}
         ${facetVisibility.indoorOutdoor && shouldShowFacetGroup(brandName, profiledFacets.indoorOutdoor, selected.indoorOutdoor, allowSingleFacet) ? renderCheckGroup("Внутренний / уличный", "indoorOutdoor", profiledFacets.indoorOutdoor, selected.indoorOutdoor) : ""}
-        ${facetVisibility.ipRatings && shouldShowFacetGroup(brandName, profiledFacets.ipRatings, selected.ipRatings, allowSingleFacet) ? renderCheckGroup("\u041a\u043b\u0430\u0441\u0441 \u0437\u0430\u0449\u0438\u0442\u044b IP", "ipRatings", profiledFacets.ipRatings, selected.ipRatings) : ""}
+        ${facetVisibility.ipRatings && shouldShowFacetGroup(brandName, profiledFacets.ipRatings, selected.ipRatings, allowSingleFacet) ? renderCheckGroup("Класс защиты IP", "ipRatings", profiledFacets.ipRatings, selected.ipRatings) : ""}
         ${facetVisibility.ioCounts && shouldShowFacetGroup(brandName, profiledFacets.ioCounts, selected.ioCounts, allowSingleFacet) ? renderCheckGroup("Входы / выходы", "ioCounts", profiledFacets.ioCounts, selected.ioCounts) : ""}
         ${facetVisibility.webInterfaces && shouldShowFacetGroup(brandName, profiledFacets.webInterfaces, selected.webInterfaces, allowSingleFacet) ? renderCheckGroup("Web-интерфейс", "webInterfaces", profiledFacets.webInterfaces, selected.webInterfaces) : ""}
         ${facetVisibility.scenarioSupports && shouldShowFacetGroup(brandName, profiledFacets.scenarioSupports, selected.scenarioSupports, allowSingleFacet) ? renderCheckGroup("Поддержка сценариев", "scenarioSupports", profiledFacets.scenarioSupports, selected.scenarioSupports) : ""}
         ${facetVisibility.loadTypes && shouldShowFacetGroup(brandName, profiledFacets.loadTypes, selected.loadTypes, allowSingleFacet) ? renderCheckGroup("Тип нагрузки", "loadTypes", profiledFacets.loadTypes, selected.loadTypes) : ""}
         ${facetVisibility.maxLoads && shouldShowFacetGroup(brandName, profiledFacets.maxLoads, selected.maxLoads, allowSingleFacet) ? renderCheckGroup("Максимальная нагрузка", "maxLoads", profiledFacets.maxLoads, selected.maxLoads) : ""}
-        <button class="button apply-filters-btn" id="brandApplyFiltersBtn" type="button">\u041f\u043e\u043a\u0430\u0437\u0430\u0442\u044c \u0442\u043e\u0432\u0430\u0440\u044b (${items.length})</button>
+        <button class="button apply-filters-btn" id="brandApplyFiltersBtn" type="button">Показать товары (${items.length})</button>
       </aside>
     </div>
     <aside class="category-browser-panel" id="brandCategoryBrowserPanel" aria-label="Навигатор разделов бренда">
       <div class="filters-popup-head category-browser-head">
         <h4>Разделы</h4>
-        <button class="button button-plain filters-close-btn" id="brandCloseCategoryBrowserBtn" type="button" aria-label="Закрыть">\u2715</button>
+        <button class="button button-plain filters-close-btn" id="brandCloseCategoryBrowserBtn" type="button" aria-label="Закрыть">✕</button>
       </div>
       <div class="category-browser-list">
         <section class="category-browser-group is-open">
-          <a class="category-browser-sub ${selectedSub ? "" : "is-active"}" href="#/brands/${brandSlug}">Все товары бренда</a>
+          <a class="category-browser-sub ${selectedSub ? "" : "is-active"}" href="/brands/${brandSlug}">Все товары бренда</a>
           ${effectiveSubcategories.length ? `
             <div class="category-browser-subs">
               ${effectiveSubcategories.map((subcategory) => {
                 const active = selectedSub === subcategory ? "is-active" : "";
-                return `<a class="category-browser-sub ${active}" href="#/brands/${brandSlug}/${subcategoryRouteToken(subcategory)}">${safeText(subcategory)}</a>`;
+                return `<a class="category-browser-sub ${active}" href="/brands/${brandSlug}/${subcategoryRouteToken(subcategory)}">${safeText(subcategory)}</a>`;
               }).join("")}
             </div>
           ` : ""}
@@ -1343,7 +1343,7 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
       <div class="sort-panel-handle" aria-hidden="true"></div>
       <div class="sort-panel-head">
         <h4>Показывать сначала</h4>
-        <button class="button button-plain filters-close-btn" id="brandCloseSortBtn" type="button" aria-label="Закрыть">\u2715</button>
+        <button class="button button-plain filters-close-btn" id="brandCloseSortBtn" type="button" aria-label="Закрыть">✕</button>
       </div>
       <div class="sort-options">
         <label class="sort-option">
@@ -1504,7 +1504,7 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
           ({ key, value, label }) => `
             <button class="filter-chip" type="button" data-chip-remove="${key}" data-chip-value="${esc(String(value))}">
               <span>${esc(String(label))}</span>
-              <span class="filter-chip-x">\u00d7</span>
+              <span class="filter-chip-x">×</span>
             </button>
           `
         )
@@ -1512,7 +1512,7 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
     `;
     if (selectedBox) {
       selectedBox.innerHTML = `
-      <button class="filter-chip filter-chip-clear" type="button" data-chip-clear-all>\u00d7</button>
+      <button class="filter-chip filter-chip-clear" type="button" data-chip-clear-all>×</button>
         ${chipsMarkup}
       `;
     }
@@ -1564,10 +1564,10 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
     if (!applyBtn) return;
     const count = countItemsForFilters(collectDraftFilters());
     if (count < 1) {
-      applyBtn.textContent = "\u041d\u0435\u0442 \u043f\u043e\u0434\u0445\u043e\u0434\u044f\u0449\u0438\u0445 \u043f\u0440\u0435\u0434\u043b\u043e\u0436\u0435\u043d\u0438\u0439";
+      applyBtn.textContent = "Нет подходящих предложений";
       applyBtn.classList.add("is-empty");
     } else {
-      applyBtn.textContent = `\u041f\u043e\u043a\u0430\u0437\u0430\u0442\u044c \u0442\u043e\u0432\u0430\u0440\u044b (${count})`;
+      applyBtn.textContent = `Показать товары (${count})`;
       applyBtn.classList.remove("is-empty");
     }
   };
@@ -1703,7 +1703,7 @@ export function renderBrandsBlock(state, slugifyFn, imageTagFn) {
       ${brands
         .map(
           (brand) => `
-        <a class="category-card brand-card" href="#/brands/${slugifyFn(brand)}">
+        <a class="category-card brand-card" href="/brands/${slugifyFn(brand)}">
           ${imageTagFn(getBrandLogo(brand), brand, getBrandLogoClass(brand), PLACEHOLDER_IMAGE)}
         </a>
       `

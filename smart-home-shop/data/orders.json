@@ -1,0 +1,25 @@
+[
+  {
+    "id": "ORD-1772296600752",
+    "createdAt": "2026-02-28T16:36:40.752Z",
+    "customer": {
+      "name": "????",
+      "phone": "+79990000000",
+      "address": "???, ???????? 1"
+    },
+    "items": [
+      {
+        "id": "prd-1000",
+        "name": "????? 24V 9.6W 3000K",
+        "qty": 1,
+        "article": "26000",
+        "price": 420,
+        "image": "https://images.unsplash.com/photo-1524484485831-a92ffc0de03f?auto=format&fit=crop&w=1000&q=80"
+      }
+    ],
+    "total": 420,
+    "paymentMethod": "cash",
+    "deliveryComment": "",
+    "status": "new"
+  }
+]

@@ -1,5 +1,5 @@
-import { PRODUCT_TYPE_DICTIONARY, KNOWN_BRANDS, SPEC_KEY_TRANSLATIONS } from './config.js';
-import { parseSpecsString, imageTag, formatPrice, normalizeVariantBaseName, splitBreadcrumbs, normText } from './utils.js';
+import { PRODUCT_TYPE_DICTIONARY, KNOWN_BRANDS, BRAND_COUNTRIES, SPEC_KEY_TRANSLATIONS } from './config.js';
+import { parseSpecsString, imageTag, formatPrice, getProductPriceView, normalizeVariantBaseName, splitBreadcrumbs, normText } from './utils.js';
 
 function imagePriority(url) {
   const raw = String(url || "").trim();
@@ -52,25 +52,28 @@ function normalizeSourceImageUrl(url) {
 
 // Добавление иерархии к продукту
 export function withHierarchy(product) {
-  const crumbs = splitBreadcrumbs(product.breadcrumbs);
-  const topCategory = crumbs[0] || product.category || "Без категории";
-  const groupRaw = normText(product.group || product.group_name || "");
-  
-  let subCategory;
-  if (crumbs.length > 1) {
-    subCategory = crumbs[crumbs.length - 1];
-  } else if (groupRaw && groupRaw !== topCategory) {
-    if (groupRaw.includes("/")) {
-      const tail = normText(groupRaw.split("/").pop());
-      subCategory = tail || groupRaw;
-    } else {
-      subCategory = groupRaw;
-    }
-  } else {
-    subCategory = topCategory;
+  // DB `category` is the curated canonical top-level category — always trust it.
+  const topCategory = normText(product.category || "Без категории");
+
+  // DB `subcategory` is the curated canonical subcategory — use it when set.
+  const dbSub = normText(product.subcategory || "");
+  if (dbSub) {
+    return { ...product, topCategory, subCategory: dbSub };
   }
-  
-  return { ...product, topCategory, subCategory };
+
+  // Fallback: derive subcategory from breadcrumbs (2nd crumb after filtering "Товары")
+  const crumbs = splitBreadcrumbs(product.breadcrumbs);
+  if (crumbs.length > 1) {
+    return { ...product, topCategory, subCategory: normText(crumbs[1]) };
+  }
+
+  const groupRaw = normText(product.group || product.group_name || "");
+  if (groupRaw && groupRaw !== topCategory) {
+    const tail = groupRaw.includes("/") ? normText(groupRaw.split("/").pop()) : groupRaw;
+    return { ...product, topCategory, subCategory: tail || groupRaw };
+  }
+
+  return { ...product, topCategory, subCategory: topCategory };
 }
 
 // Получение значения атрибута продукта
@@ -354,7 +357,7 @@ export function getUnifiedBrandSubcategory(product) {
     "Датчики",
     "Термостаты",
     "Энергомониторинг",
-    "РђСѓРґРёРѕ / Multiroom",
+    "Аудио / Multiroom",
     "Аксессуары"
   ]);
 
@@ -388,22 +391,46 @@ export function getUnifiedBrandSubcategory(product) {
 }
 
 // Создание карточки продукта
+export function bindProductCardGalleries(container) {
+  // Cards currently render a single primary image — no gallery interaction to bind.
+}
+
+export function rebalanceProductCardMedia(container) {
+  // No-op: card media sizing is handled purely by CSS.
+}
+
 export function renderProductCard(product, isFavoriteFn, placeholderImage) {
   const imgSrc = pickPrimaryImage(product, placeholderImage, { allowSoftFallback: true });
   const isSoftSource = isSoftSourceImage(imgSrc);
   const isPuck = isPuckImage(imgSrc);
+  const brand = getProductBrand(product);
+  const country = BRAND_COUNTRIES[brand] || "";
+  const brandLabel = brand && brand !== "Без бренда"
+    ? (country ? `${brand} — ${country}` : brand)
+    : "";
+
   return `
-    <a class="product-card" href="#/product/${product.id}">
+    <a class="product-card" href="/product/${product.id}">
       ${product.is_extra ? '<div class="extra-badge" title="Лишний товар">⚠</div>' : ''}
-      <button class="fav-card-btn ${isFavoriteFn(product.id) ? "is-active" : ""}" type="button" data-fav-toggle="${product.id}" aria-label="Избранное">${
-        isFavoriteFn(product.id) ? "♥" : "♡"
-      }</button>
+      <button class="fav-card-btn ${isFavoriteFn(product.id) ? "is-active" : ""}" type="button" data-fav-toggle="${product.id}" aria-label="Избранное">
+        <span class="material-symbols-rounded msi">${isFavoriteFn(product.id) ? "favorite" : "favorite_border"}</span>
+      </button>
       <div class="card-media ${isSoftSource ? "is-soft-source" : ""} ${isPuck ? "is-puck" : ""}">
         ${imageTag(imgSrc, product.name, "", placeholderImage)}
       </div>
       <h3>${product.name}</h3>
-      <div class="note">Артикул: ${product.article || product.id || "-"}</div>
-      <div class="price">${formatPrice(product.price)}${Number(product.price) > 0 ? " / шт" : ""}</div>
+      <div class="note">${brandLabel}</div>
+      <div class="price">
+        <span class="price-main">${(() => {
+          const pv = getProductPriceView(product);
+          if (pv.approxRub) return `${pv.main} <span class="price-approx">${pv.approxRub}</span>`;
+          return pv.main;
+        })()}</span>
+        <button class="card-buy-btn" type="button" data-card-buy="${product.id}" aria-label="В корзину">
+          <span class="material-symbols-rounded msi">shopping_cart</span>
+          <span class="card-buy-badge is-empty" data-card-buy-badge></span>
+        </button>
+      </div>
     </a>
   `;
 }
