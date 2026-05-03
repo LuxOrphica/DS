@@ -479,11 +479,19 @@ function initSchema() {
       created_at TEXT NOT NULL,
       customer_name TEXT NOT NULL,
       customer_phone TEXT NOT NULL,
+      customer_email TEXT DEFAULT '',
       customer_address TEXT NOT NULL,
       payment_method TEXT NOT NULL,
       delivery_comment TEXT NOT NULL,
       total REAL NOT NULL,
-      status TEXT NOT NULL
+      status TEXT NOT NULL,
+      payment_status TEXT DEFAULT 'unpaid',
+      delivery_method TEXT DEFAULT '',
+      manager TEXT DEFAULT '',
+      manager_comment TEXT DEFAULT '',
+      updated_at TEXT DEFAULT '',
+      status_history_json TEXT DEFAULT '[]',
+      order_documents_json TEXT DEFAULT '[]'
     );
 
     CREATE TABLE IF NOT EXISTS exchange_rates (
