@@ -21,7 +21,7 @@ const { createAuditModule } = require("./modules/audit");
 const { createCatalogFiltersModule } = require("./modules/catalog-filters");
 
 const dataDir = path.join(__dirname, "..", "data");
-const dbPath = path.join(dataDir, "shop.db");
+const dbPath = process.env.DB_PATH || path.join(dataDir, "shop.db");
 const curatedBrandCategoriesPath = path.join(dataDir, "brand-native-categories.json");
 const normalizedCatalogV2Path = path.join(__dirname, "..", "reports", "functional_catalog_products.normalized.v2.csv");
 let nativeBrandCategoriesCache = {

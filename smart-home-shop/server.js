@@ -243,48 +243,50 @@ app.use((err, req, res, next) => {
   return res.status(500).json({ ok: false, error: "Internal server error" });
 });
 
-const server = app.listen(port, () => {
-  console.log(`Smart Home Shop server started: http://localhost:${port}`);
-  console.log(`DB: ${dbPath}`);
-  if (disableAdminAuth) {
-    console.warn("ADMIN AUTH DISABLED (DISABLE_ADMIN_AUTH=1)");
-  } else if (!adminToken) {
-    console.warn("ADMIN_TOKEN is not set. /api/admin/* will return 503 until configured.");
-  }
-  if (isProduction && allowedOrigins.length === 0) {
-    console.warn("CORS_ALLOWED_ORIGINS is empty in production mode: cross-origin browser requests will be blocked.");
-  }
-  if (cspReportOnly) {
-    console.warn("CSP is running in report-only mode (CSP_REPORT_ONLY=1)");
-  }
-
-  exchangeRateService.refreshEurRubRate().then((result) => {
-    if (result.ok) {
-      console.log(`EUR/RUB updated: ${Number(result.saved?.rate || 0).toFixed(4)} (${result.saved?.effectiveDate || "-"})`);
-    } else {
-      console.warn(`EUR/RUB update skipped: ${result.error}`);
+if (require.main === module) {
+  const server = app.listen(port, () => {
+    console.log(`Smart Home Shop server started: http://localhost:${port}`);
+    console.log(`DB: ${dbPath}`);
+    if (disableAdminAuth) {
+      console.warn("ADMIN AUTH DISABLED (DISABLE_ADMIN_AUTH=1)");
+    } else if (!adminToken) {
+      console.warn("ADMIN_TOKEN is not set. /api/admin/* will return 503 until configured.");
     }
+    if (isProduction && allowedOrigins.length === 0) {
+      console.warn("CORS_ALLOWED_ORIGINS is empty in production mode: cross-origin browser requests will be blocked.");
+    }
+    if (cspReportOnly) {
+      console.warn("CSP is running in report-only mode (CSP_REPORT_ONLY=1)");
+    }
+
+    exchangeRateService.refreshEurRubRate().then((result) => {
+      if (result.ok) {
+        console.log(`EUR/RUB updated: ${Number(result.saved?.rate || 0).toFixed(4)} (${result.saved?.effectiveDate || "-"})`);
+      } else {
+        console.warn(`EUR/RUB update skipped: ${result.error}`);
+      }
+    });
+
+    const eurRubTimer = setInterval(() => {
+      exchangeRateService.refreshEurRubRate().then((result) => {
+        if (!result.ok) console.warn(`EUR/RUB update skipped: ${result.error}`);
+      });
+    }, EUR_RUB_REFRESH_MS);
+
+    const gracefulShutdown = (signal) => {
+      clearInterval(eurRubTimer);
+      server.close(() => process.exit(0));
+      setTimeout(() => process.exit(1), 10_000).unref();
+      if (signal) console.log(`Received ${signal}, shutting down...`);
+    };
+
+    process.once("SIGINT", () => gracefulShutdown("SIGINT"));
+    process.once("SIGTERM", () => gracefulShutdown("SIGTERM"));
   });
 
-  const eurRubTimer = setInterval(() => {
-    exchangeRateService.refreshEurRubRate().then((result) => {
-      if (!result.ok) console.warn(`EUR/RUB update skipped: ${result.error}`);
-    });
-  }, EUR_RUB_REFRESH_MS);
-
-  const gracefulShutdown = (signal) => {
-    clearInterval(eurRubTimer);
-    server.close(() => process.exit(0));
-    setTimeout(() => process.exit(1), 10_000).unref();
-    if (signal) {
-      console.log(`Received ${signal}, shutting down...`);
-    }
-  };
-
-  process.once("SIGINT", () => gracefulShutdown("SIGINT"));
-  process.once("SIGTERM", () => gracefulShutdown("SIGTERM"));
-});
-
-server.requestTimeout = Math.max(5_000, Number(process.env.REQUEST_TIMEOUT_MS || 30_000));
-server.headersTimeout = Math.max(5_000, Number(process.env.HEADERS_TIMEOUT_MS || 35_000));
-server.keepAliveTimeout = Math.max(1_000, Number(process.env.KEEP_ALIVE_TIMEOUT_MS || 5_000));
+  server.requestTimeout = Math.max(5_000, Number(process.env.REQUEST_TIMEOUT_MS || 30_000));
+  server.headersTimeout = Math.max(5_000, Number(process.env.HEADERS_TIMEOUT_MS || 35_000));
+  server.keepAliveTimeout = Math.max(1_000, Number(process.env.KEEP_ALIVE_TIMEOUT_MS || 5_000));
+} else {
+  module.exports = app;
+}
