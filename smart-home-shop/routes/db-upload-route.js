@@ -1,5 +1,4 @@
 const fs = require("fs");
-const path = require("path");
 
 // Temporary DB upload endpoint.
 // Only active when ENABLE_DB_UPLOAD=1 is set.
@@ -9,7 +8,7 @@ function registerDbUploadRoute(app, { dbPath, adminToken }) {
 
   const secret = String(adminToken || "").trim();
 
-  app.put("/api/admin/upload-db", (req, res) => {
+  app.put("/api/db-upload", (req, res) => {
     const auth = String(req.headers["x-upload-token"] || "").trim();
     if (!secret || auth !== secret) {
       return res.status(403).json({ ok: false, error: "Forbidden" });
@@ -34,7 +33,7 @@ function registerDbUploadRoute(app, { dbPath, adminToken }) {
     });
   });
 
-  console.warn("⚠️  DB upload endpoint active: PUT /api/admin/upload-db");
+  console.warn("DB upload endpoint active: PUT /api/db-upload");
 }
 
 module.exports = { registerDbUploadRoute };
