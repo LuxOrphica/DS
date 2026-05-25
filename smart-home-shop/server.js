@@ -108,21 +108,6 @@ const corsOptions = createCorsOptions({
 
 app.use(createRequestContextMiddleware({ enableLogs: true }));
 app.use(createHelmetMiddleware({ reportOnly: cspReportOnly }));
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
-
-app.use(express.json({ limit: apiBodyLimit, strict: true }));
-app.use((req, res, next) => {
-  if (req.path.startsWith("/api/")) {
-    res.setHeader("Content-Type", "application/json; charset=UTF-8");
-  }
-  next();
-});
-
-app.use(createApiRateLimitMiddleware({
-  windowMs: Math.max(5_000, Number(process.env.API_RATE_LIMIT_WINDOW_MS || 60_000)),
-  maxRequests: Math.max(20, Number(process.env.API_RATE_LIMIT_MAX || 240))
-}));
 
 app.use(
   express.static(path.join(__dirname, "public"), {
@@ -154,6 +139,21 @@ app.use(
   })
 );
 
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
+app.use(express.json({ limit: apiBodyLimit, strict: true }));
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api/")) {
+    res.setHeader("Content-Type", "application/json; charset=UTF-8");
+  }
+  next();
+});
+
+app.use(createApiRateLimitMiddleware({
+  windowMs: Math.max(5_000, Number(process.env.API_RATE_LIMIT_WINDOW_MS || 60_000)),
+  maxRequests: Math.max(20, Number(process.env.API_RATE_LIMIT_MAX || 240))
+}));
 registerPublicRoutes(app, {
   dbPath,
   getStats,
@@ -242,7 +242,12 @@ app.use((err, req, res, next) => {
     return res.status(413).json({ ok: false, error: "Payload too large" });
   }
   console.error(`[${req.requestId || "-"}]`, err);
-  return res.status(500).json({ ok: false, error: "Internal server error" });
+  const status = Number(err.statusCode || err.status || 500);
+  const safeStatus = status >= 400 && status < 600 ? status : 500;
+  return res.status(safeStatus).json({
+    ok: false,
+    error: safeStatus >= 500 ? "Internal server error" : String(err.message || "Request failed")
+  });
 });
 
 if (require.main === module) {
