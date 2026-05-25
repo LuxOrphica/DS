@@ -468,7 +468,6 @@ const {
   countMulti,
   matchesSingle,
   matchesMulti,
-  matchesMultiAll,
   renderCheckGroup
 } = facetHelpers;
 function shouldShowFacetGroup(brandName, options, selectedSet, _allowSingle = false) {
@@ -1188,7 +1187,7 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
     if (!productMatchesSearch(p, state.search)) return false;
     if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "brand"), selected.brands, "brands")) return false;
     if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "systemType"), selected.systemTypes, "systemTypes")) return false;
-    if (!matchesMultiAll(getFacetValue(brandName, selectedSub, p, "protocol"), selected.protocols, "protocols")) return false;
+    if (!matchesMulti(getFacetValue(brandName, selectedSub, p, "protocol"), selected.protocols, "protocols")) return false;
     if (!matchesMulti(getFacetValue(brandName, selectedSub, p, "mounting"), selected.mountings, "mountings")) return false;
     if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "supplyVoltage"), selected.supplyVoltages, "supplyVoltages")) return false;
     if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "channels"), selected.channels, "channels")) return false;
@@ -1409,7 +1408,7 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
       if (!productMatchesSearch(p, state.search)) return false;
       if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "brand"), selectedSnapshot.brands, "brands")) return false;
       if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "systemType"), selectedSnapshot.systemTypes, "systemTypes")) return false;
-      if (!matchesMultiAll(getFacetValue(brandName, selectedSub, p, "protocol"), selectedSnapshot.protocols, "protocols")) return false;
+      if (!matchesMulti(getFacetValue(brandName, selectedSub, p, "protocol"), selectedSnapshot.protocols, "protocols")) return false;
       if (!matchesMulti(getFacetValue(brandName, selectedSub, p, "mounting"), selectedSnapshot.mountings, "mountings")) return false;
       if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "supplyVoltage"), selectedSnapshot.supplyVoltages, "supplyVoltages")) return false;
       if (!matchesSingle(getFacetValue(brandName, selectedSub, p, "channels"), selectedSnapshot.channels, "channels")) return false;
@@ -1455,7 +1454,13 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
   const selectedBox = document.getElementById("brandSelectedFilters");
   const mobileSelectedBox = document.getElementById("brandMobileSelectedFilters");
   const mobileFiltersCount = document.getElementById("brandMobileFiltersCount");
+  let desktopAutoApplyTimer = null;
+  const isDesktopFilterMode = () => !window.matchMedia("(max-width: 980px)").matches;
   const applyDraftFilters = () => {
+    if (desktopAutoApplyTimer) {
+      window.clearTimeout(desktopAutoApplyTimer);
+      desktopAutoApplyTimer = null;
+    }
     const draft = collectDraftFilters();
     filterKeys.forEach((key) => {
       state.filters[key] = Array.isArray(draft[key]) ? draft[key] : [];
@@ -1463,6 +1468,13 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
     state.filters.minPrice = draft.minPrice;
     state.filters.maxPrice = draft.maxPrice;
     renderBrandSubcategoryPage(state, appEl, brandSlug, subcategorySlug, renderProductCardFn, bindSearch);
+  };
+  const scheduleDesktopAutoApply = () => {
+    if (!isDesktopFilterMode()) return;
+    if (desktopAutoApplyTimer) window.clearTimeout(desktopAutoApplyTimer);
+    desktopAutoApplyTimer = window.setTimeout(() => {
+      applyDraftFilters();
+    }, 120);
   };
   const buildDraftChips = (draft) => {
     const chips = [];
@@ -1572,15 +1584,18 @@ export function renderBrandSubcategoryPage(state, appEl, brandSlug, subcategoryS
     input.addEventListener("change", () => {
       updateApplyButton();
       renderSelectedChips();
+      scheduleDesktopAutoApply();
     });
   });
   if (minPriceFilter) minPriceFilter.addEventListener("input", () => {
     updateApplyButton();
     renderSelectedChips();
+    scheduleDesktopAutoApply();
   });
   if (maxPriceFilter) maxPriceFilter.addEventListener("input", () => {
     updateApplyButton();
     renderSelectedChips();
+    scheduleDesktopAutoApply();
   });
   updateApplyButton();
   renderSelectedChips();

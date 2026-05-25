@@ -130,7 +130,7 @@ function priceRub(product) {
 }
 
 function protocolValues(product) {
-  return String(product?.protocol || "")
+  const values = String(product?.protocol || "")
     .split(/[;,|]+/g)
     .map((raw) => {
       const value = String(raw || "").trim();
@@ -148,6 +148,16 @@ function protocolValues(product) {
       return value;
     })
     .filter(Boolean);
+  if (values.length) return values;
+  const hay = `${product?.name || ""} ${product?.article || ""} ${product?.id || ""} ${product?.group || ""} ${product?.specs || ""}`.toLowerCase();
+  if (/\bmodbus\b/.test(hay)) return ["Modbus"];
+  if (/\bmqtt\b/.test(hay)) return ["MQTT"];
+  if (/\bknx\b/.test(hay)) return ["KNX"];
+  if (/\bbacnet\b/.test(hay)) return ["BACnet"];
+  if (/\bopc\s*ua\b/.test(hay)) return ["OPC UA"];
+  if (/\bsnmp\b/.test(hay)) return ["SNMP"];
+  if (/\b1-?wire\b/.test(hay)) return ["1-Wire"];
+  return [];
 }
 
 test("catalog filter matrix matches real product data", async (t) => {
@@ -277,6 +287,48 @@ test("catalog filter matrix matches real product data", async (t) => {
     await selectSortMode(page, "expensive");
     await waitForCardIds(page, expectedExpensive, "expensive sort");
     await assertNoUiCrash(page, errors, "price sort");
+  });
+
+  await t.test("brand page filters auto-apply and multi-select protocols as any value", async () => {
+    await page.goto(`${baseUrl}/brands/wiren-board`, { waitUntil: "domcontentloaded" });
+    await page.locator(".product-grid .product-card").first().waitFor({ state: "visible" });
+    const brandHrefs = [
+      "/brands/wiren-board",
+      ...await page.$$eval('a[href^="/brands/wiren-board/"]', (links) =>
+        Array.from(new Set(links.map((a) => a.getAttribute("href")).filter(Boolean)))
+      )
+    ];
+    let brandBaseIds = [];
+    let protocolCount = 0;
+    for (const href of brandHrefs) {
+      await page.goto(`${baseUrl}${href}`, { waitUntil: "domcontentloaded" });
+      try {
+        await page.locator(".product-grid .product-card").first().waitFor({ state: "visible", timeout: 5000 });
+      } catch {
+        continue;
+      }
+      protocolCount = await page.locator('[data-filter-key="protocols"]').count();
+      if (protocolCount >= 2) {
+        brandBaseIds = await getVisibleCardIds(page);
+        break;
+      }
+    }
+    assert.ok(protocolCount >= 2, "expected a Wiren Board brand section to expose protocol facets");
+
+    const selectedProtocols = [
+      String(await page.locator('[data-filter-key="protocols"]').nth(0).getAttribute("value") || ""),
+      String(await page.locator('[data-filter-key="protocols"]').nth(1).getAttribute("value") || "")
+    ].filter(Boolean);
+    const selected = new Set(selectedProtocols);
+    const expectedIds = brandBaseIds.filter((id) => protocolValues(byId.get(id)).some((value) => selected.has(value)));
+    assert.ok(expectedIds.length > 0, `expected brand products for protocols ${selectedProtocols.join(", ")}`);
+
+    const applyDisplay = await page.locator("#brandApplyFiltersBtn").evaluate((el) => getComputedStyle(el).display);
+    assert.equal(applyDisplay, "none", "brand apply button should be hidden on desktop");
+    await page.locator('[data-filter-key="protocols"]').nth(0).check();
+    await page.locator('[data-filter-key="protocols"]').nth(1).check();
+    await waitForCardIds(page, expectedIds, "brand multi protocol filter");
+    await assertNoUiCrash(page, errors, "brand multi protocol filter");
   });
 
   assert.deepEqual(errors, [], `unexpected browser errors\n${errors.join("\n")}`);
