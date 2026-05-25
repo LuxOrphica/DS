@@ -456,21 +456,34 @@
 
           <div class="editor-content">
             <div class="editor-pane active" id="basicPane">
-              <div class="form-grid product-basic-grid">
-                <div class="form-group full-width product-main-photo-group">
-                  <label>Превью товара</label>
-                  <div class="product-main-photo-card">
-                    <div class="product-main-photo-thumb" id="productMainPhotoPreview">
-                      <span class="product-main-photo-empty">Фото пока не добавлено</span>
-                    </div>
-                    <div class="product-main-photo-info">
-                      <strong id="productMainPhotoLabel">Основное фото</strong>
-                      <span id="productMainPhotoMeta">0 фото</span>
-                      <button id="openProductPhotosTabBtn" type="button" class="btn btn-outline">Открыть вкладку «Фото»</button>
-                    </div>
+              <div class="product-basic-hero">
+                <div class="product-main-photo-card">
+                  <div class="product-main-photo-thumb" id="productMainPhotoPreview">
+                    <span class="product-main-photo-empty">Фото пока не добавлено</span>
+                  </div>
+                  <div class="product-main-photo-info">
+                    <strong id="productMainPhotoLabel">Основное фото</strong>
+                    <span id="productMainPhotoMeta">0 фото</span>
+                    <button id="openProductPhotosTabBtn" type="button" class="btn btn-outline">Открыть вкладку «Фото»</button>
                   </div>
                 </div>
+                <aside class="product-overview-card" aria-label="Сводка товара">
+                  <div class="product-overview-topline">
+                    <span id="productOverviewStatus" class="product-overview-status">Статус: —</span>
+                    <span id="productOverviewPrice" class="product-overview-price">—</span>
+                  </div>
+                  <h3 id="productOverviewName">Новый товар</h3>
+                  <dl class="product-overview-facts">
+                    <div><dt>Артикул</dt><dd id="productOverviewArticle">—</dd></div>
+                    <div><dt>Бренд</dt><dd id="productOverviewBrand">—</dd></div>
+                    <div><dt>Категория</dt><dd id="productOverviewCategory">—</dd></div>
+                    <div><dt>Фото</dt><dd id="productOverviewPhotos">0</dd></div>
+                  </dl>
+                  <div id="productQualityChecklist" class="product-quality-checklist"></div>
+                </aside>
+              </div>
 
+              <div class="form-grid product-basic-grid">
                 <div class="form-group full-width">
                   <label>Название товара *</label>
                   <input type="text" id="productName" class="input" required />

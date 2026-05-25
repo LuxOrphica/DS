@@ -285,8 +285,28 @@ class AdminApp {
 
     const productStatus = document.getElementById('productStatus');
     if (productStatus) {
-      productStatus.addEventListener('change', () => this.refreshQualityIndicator());
+      productStatus.addEventListener('change', () => {
+        this.refreshQualityIndicator();
+        this.renderProductOverview();
+      });
     }
+    [
+      'productName',
+      'productArticle',
+      'productBrand',
+      'productCategory',
+      'productFunctionalCategories',
+      'productPrice',
+      'productDescription',
+      'productSlug',
+      'productMetaTitle',
+      'productMetaDescription'
+    ].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const eventName = el.tagName === 'SELECT' ? 'change' : 'input';
+      el.addEventListener(eventName, () => this.renderProductOverview());
+    });
     const productBrand = document.getElementById('productBrand');
     if (productBrand) {
       productBrand.addEventListener('change', () => this.syncProductBrandCategoryOptions());
@@ -3291,6 +3311,7 @@ class AdminApp {
     document.getElementById('productMetaDescription').value = product.metaDescription || '';
     this.renderProductAttributeEditor();
     this.refreshQualityIndicator();
+    this.renderProductOverview();
   }
 
   prettyJson(value, fallback) {
@@ -3690,6 +3711,7 @@ class AdminApp {
     }));
     this.updateMediaCount();
     this.renderProductMainPhotoPreview();
+    this.renderProductOverview();
   }
 
   buildMediaFromLegacyFields(product = {}) {
@@ -3776,12 +3798,82 @@ class AdminApp {
       previewEl.innerHTML = '<span class="product-main-photo-empty">Фото пока не добавлено</span>';
       labelEl.textContent = 'Основное фото';
       metaEl.textContent = `${total} фото`;
+      this.renderProductOverview();
       return;
     }
 
     previewEl.innerHTML = `<img src="${this.escapeHtml(primary.url)}" alt="${this.escapeHtml(primary.label || this.currentProduct?.name || 'Фото товара')}" loading="lazy" />`;
     labelEl.textContent = String(primary.label || '').trim() || 'Основное фото';
     metaEl.textContent = primary.isCover ? `${total} фото • cover` : `${total} фото`;
+    this.renderProductOverview();
+  }
+
+  getSelectedOptionText(id) {
+    const el = document.getElementById(id);
+    if (!el) return '';
+    const option = el.options ? el.options[el.selectedIndex] : null;
+    const value = String(el.value || '').trim();
+    const label = String(option?.textContent || '').trim();
+    if (!value) return '';
+    return label || value;
+  }
+
+  getProductStatusLabel(status) {
+    const map = {
+      active: 'Опубликован',
+      draft: 'Черновик',
+      hidden: 'Скрыт',
+      archived: 'Архив'
+    };
+    return map[String(status || '').toLowerCase()] || String(status || '—');
+  }
+
+  renderProductOverview() {
+    const name = String(document.getElementById('productName')?.value || this.currentProduct?.name || '').trim();
+    const article = String(document.getElementById('productArticle')?.value || this.currentProduct?.article || '').trim();
+    const brand = this.getSelectedOptionText('productBrand') || String(this.currentProduct?.brand || '').trim();
+    const category = this.getSelectedOptionText('productCategory') || String(this.currentProduct?.category || '').trim();
+    const priceRaw = document.getElementById('productPrice')?.value ?? this.currentProduct?.price ?? '';
+    const status = document.getElementById('productStatus')?.value || this.currentProduct?.status || 'active';
+    const description = String(document.getElementById('productDescription')?.value || '').trim();
+    const metaTitle = String(document.getElementById('productMetaTitle')?.value || '').trim();
+    const metaDescription = String(document.getElementById('productMetaDescription')?.value || '').trim();
+    const photoCount = Array.isArray(this.currentMedia)
+      ? this.currentMedia.filter((item) => item && String(item.url || '').trim()).length
+      : 0;
+    const documentCount = Array.isArray(this.currentDocuments)
+      ? this.currentDocuments.filter((item) => item && String(item.url || '').trim()).length
+      : 0;
+
+    const setText = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    };
+
+    setText('productOverviewStatus', `Статус: ${this.getProductStatusLabel(status)}`);
+    setText('productOverviewPrice', priceRaw !== '' ? this.formatPrice(priceRaw) : 'Цена не задана');
+    setText('productOverviewName', name || 'Новый товар');
+    setText('productOverviewArticle', article || '—');
+    setText('productOverviewBrand', brand || '—');
+    setText('productOverviewCategory', category || '—');
+    setText('productOverviewPhotos', `${photoCount} фото`);
+
+    const checks = [
+      { label: 'Фото', ok: photoCount > 0 },
+      { label: 'Цена', ok: Number(priceRaw) > 0 },
+      { label: 'Бренд', ok: Boolean(brand) },
+      { label: 'Категория', ok: Boolean(category) },
+      { label: 'Описание', ok: description.length >= 40 },
+      { label: 'SEO title', ok: Boolean(metaTitle) },
+      { label: 'SEO description', ok: Boolean(metaDescription) },
+      { label: 'Документы', ok: documentCount > 0 }
+    ];
+    const checklist = document.getElementById('productQualityChecklist');
+    if (checklist) {
+      checklist.innerHTML = checks.map((item) => (
+        `<span class="product-quality-chip ${item.ok ? 'is-ok' : 'is-missing'}">${item.ok ? '✓' : '!'} ${this.escapeHtml(item.label)}</span>`
+      )).join('');
+    }
   }
   renderMediaTable() {
     const tbody = document.getElementById('mediaTableBody');
@@ -3887,6 +3979,7 @@ class AdminApp {
       sortOrder: Number(item?.sortOrder ?? index)
     }));
     this.updateDocumentsCount();
+    this.renderProductOverview();
   }
 
   updateDocumentsCount() {
