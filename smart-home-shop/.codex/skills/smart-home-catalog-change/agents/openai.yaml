@@ -1,0 +1,4 @@
+interface:
+  display_name: "Smart Home Catalog Change"
+  short_description: "Catalog changes with data safety."
+  default_prompt: "Use this when changing catalog data, importers, product normalization, images, filters, or catalog snapshots in smart-home-shop."

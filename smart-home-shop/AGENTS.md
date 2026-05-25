@@ -42,3 +42,14 @@ Non-negotiable:
 2. For interactive filters/forms:
    - avoid duplicate triggers (button + auto-apply) unless explicitly required.
    - prefer clear control semantics (buttons look like buttons, inputs like inputs).
+
+## Project Workflow Skills
+
+Local workflow skills live in `.codex/skills/`. Use them as task-specific gates on top of this file:
+
+- `smart-home-catalog-change`: catalog data, importers, parsers, normalization, images, filters, and golden snapshots.
+- `smart-home-admin-ui-change`: admin HTML/JS/CSS, admin flows, forms, filters, and admin API interactions.
+- `smart-home-checkout-orders-change`: cart, checkout, order validation, order persistence, and customer order cabinet.
+- `smart-home-release-gate`: final verification before declaring work ready to ship, deploy, merge, or hand off.
+
+Order of authority: user request, this `AGENTS.md`, then the relevant local skill. If a skill conflicts with this file, follow this file.

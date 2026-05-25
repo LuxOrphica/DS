@@ -1,0 +1,4 @@
+interface:
+  display_name: "Smart Home Checkout Orders Change"
+  short_description: "Checkout and order changes safely."
+  default_prompt: "Use this when changing cart, checkout, orders API, order schemas, or customer order cabinet in smart-home-shop."

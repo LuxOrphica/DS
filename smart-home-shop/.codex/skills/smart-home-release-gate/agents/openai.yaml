@@ -1,0 +1,4 @@
+interface:
+  display_name: "Smart Home Release Gate"
+  short_description: "Run the final release verification gate for smart-home-shop."
+  default_prompt: "Use this before declaring smart-home-shop changes ready to ship or deploy."
