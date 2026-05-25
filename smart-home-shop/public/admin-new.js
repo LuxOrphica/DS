@@ -146,18 +146,56 @@ class AdminApp {
   setupEventListeners() {
     const createProductBtn = document.getElementById('createProductBtn');
     if (createProductBtn) createProductBtn.addEventListener('click', () => this.createProduct());
+    const createBrandBtn = document.getElementById('createBrandBtn');
+    if (createBrandBtn) createBrandBtn.addEventListener('click', () => this.createBrand());
+    const createFunctionalCategoryBtn = document.getElementById('createFunctionalCategoryBtn');
+    if (createFunctionalCategoryBtn) createFunctionalCategoryBtn.addEventListener('click', () => this.createFunctionalCategory());
+    const createBrandCategoryBtn = document.getElementById('createBrandCategoryBtn');
+    if (createBrandCategoryBtn) createBrandCategoryBtn.addEventListener('click', () => this.createBrandCategory());
+    const createCategoryAttributeTemplateBtn = document.getElementById('createCategoryAttributeTemplateBtn');
+    if (createCategoryAttributeTemplateBtn) createCategoryAttributeTemplateBtn.addEventListener('click', () => this.createCategoryAttributeTemplate());
     const importProductsBtn = document.getElementById('importProductsBtn');
     if (importProductsBtn) importProductsBtn.addEventListener('click', () => this.importProducts());
     const exportProductsBtn = document.getElementById('exportProductsBtn');
     if (exportProductsBtn) exportProductsBtn.addEventListener('click', () => this.exportProducts());
+    const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+    if (adminLogoutBtn) adminLogoutBtn.addEventListener('click', () => this.logoutAdmin());
     const backToProductsBtn = document.getElementById('backToProductsBtn');
     if (backToProductsBtn) backToProductsBtn.addEventListener('click', () => this.backToProducts());
     const resetProductsFiltersBtn = document.getElementById('resetProductsFiltersBtn');
     if (resetProductsFiltersBtn) resetProductsFiltersBtn.addEventListener('click', () => this.resetFilters());
+    const previewProductBtn = document.getElementById('previewProductBtn');
+    if (previewProductBtn) previewProductBtn.addEventListener('click', () => this.previewProduct());
+    const saveProductBtn = document.getElementById('saveProductBtn');
+    if (saveProductBtn) saveProductBtn.addEventListener('click', () => this.saveProduct());
+    const openProductPhotosTabBtn = document.getElementById('openProductPhotosTabBtn');
+    if (openProductPhotosTabBtn) openProductPhotosTabBtn.addEventListener('click', () => this.switchEditorTab('photos'));
+    const addVariantRowBtn = document.getElementById('addVariantRowBtn');
+    if (addVariantRowBtn) addVariantRowBtn.addEventListener('click', () => this.addVariantRow());
+    const addContentTabBtn = document.getElementById('addContentTabBtn');
+    if (addContentTabBtn) addContentTabBtn.addEventListener('click', () => this.addContentTab());
+    const addContentBlockBtn = document.getElementById('addContentBlockBtn');
+    if (addContentBlockBtn) addContentBlockBtn.addEventListener('click', () => this.addContentBlock());
+    const saveContentTabBtn = document.getElementById('saveContentTabBtn');
+    if (saveContentTabBtn) saveContentTabBtn.addEventListener('click', () => this.saveContentTab());
+    const deleteContentTabBtn = document.getElementById('deleteContentTabBtn');
+    if (deleteContentTabBtn) deleteContentTabBtn.addEventListener('click', () => this.deleteContentTab());
+    const refreshAttributeEditorBtn = document.getElementById('refreshAttributeEditorBtn');
+    if (refreshAttributeEditorBtn) refreshAttributeEditorBtn.addEventListener('click', () => this.refreshAttributeEditor());
+    const syncAttributesFromRawBtn = document.getElementById('syncAttributesFromRawBtn');
+    if (syncAttributesFromRawBtn) syncAttributesFromRawBtn.addEventListener('click', () => this.syncAttributesFromRaw());
+    const addDocumentRowBtn = document.getElementById('addDocumentRowBtn');
+    if (addDocumentRowBtn) addDocumentRowBtn.addEventListener('click', () => this.addDocumentRow());
+    const saveDocumentsBtn = document.getElementById('saveDocumentsBtn');
+    if (saveDocumentsBtn) saveDocumentsBtn.addEventListener('click', () => this.saveDocuments());
     const applyBulkActionBtn = document.getElementById('applyBulkActionBtn');
     if (applyBulkActionBtn) applyBulkActionBtn.addEventListener('click', () => this.applyBulkAction());
     const clearSelectionBtn = document.getElementById('clearSelectionBtn');
     if (clearSelectionBtn) clearSelectionBtn.addEventListener('click', () => this.clearSelection());
+    const resetOrdersFiltersBtn = document.getElementById('resetOrdersFiltersBtn');
+    if (resetOrdersFiltersBtn) resetOrdersFiltersBtn.addEventListener('click', () => this.resetOrdersFilters());
+    const saveOrderModalBtn = document.getElementById('saveOrderModalBtn');
+    if (saveOrderModalBtn) saveOrderModalBtn.addEventListener('click', () => this.saveOrderModal());
     const selectAll = document.getElementById('selectAll');
     if (selectAll) selectAll.addEventListener('change', () => this.toggleSelectAll());
 
@@ -193,6 +231,21 @@ class AdminApp {
       btn.addEventListener('click', () => {
         const tab = String(btn.dataset.taxonomyTab || '').trim();
         this.setCategoriesDictionaryTab(tab);
+      });
+    });
+
+    document.querySelectorAll('[data-close-modal]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        window.closeModal(String(btn.dataset.closeModal || ''));
+      });
+    });
+
+    document.querySelectorAll('[data-product-editor-action]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const action = String(btn.dataset.productEditorAction || '').trim();
+        if (action === 'duplicate') this.duplicateProduct();
+        if (action === 'archive') this.archiveProduct();
+        if (action === 'delete') this.deleteProduct();
       });
     });
 
@@ -308,6 +361,118 @@ class AdminApp {
           const productName = String(btn.dataset.name || '').trim();
           this.deleteProductById(productId, productName);
         }
+      });
+      productsTableBody.addEventListener('change', (event) => {
+        const checkbox = event.target.closest('.product-checkbox[data-id]');
+        if (!checkbox) return;
+        this.toggleProductSelection(String(checkbox.dataset.id || ''));
+      });
+    }
+
+    const ordersTableBody = document.getElementById('ordersTableBody');
+    if (ordersTableBody && !ordersTableBody.dataset.actionsBound) {
+      ordersTableBody.dataset.actionsBound = '1';
+      ordersTableBody.addEventListener('click', (event) => {
+        const btn = event.target.closest('button[data-order-action]');
+        if (!btn) return;
+        const action = String(btn.dataset.orderAction || '').trim();
+        const orderId = String(btn.dataset.id || '').trim();
+        if (action === 'details' && orderId) this.viewOrderDetails(orderId);
+      });
+    }
+
+    const categoryAttributeTemplatesBody = document.getElementById('categoryAttributeTemplatesBody');
+    if (categoryAttributeTemplatesBody && !categoryAttributeTemplatesBody.dataset.actionsBound) {
+      categoryAttributeTemplatesBody.dataset.actionsBound = '1';
+      categoryAttributeTemplatesBody.addEventListener('change', (event) => {
+        const input = event.target.closest('input[data-template-action="toggle-required"][data-id]');
+        if (!input) return;
+        this.toggleTemplateRequired(Number(input.dataset.id), Boolean(input.checked));
+      });
+      categoryAttributeTemplatesBody.addEventListener('click', (event) => {
+        const btn = event.target.closest('button[data-template-action="delete"][data-id]');
+        if (!btn) return;
+        this.deleteCategoryAttributeTemplate(Number(btn.dataset.id));
+      });
+    }
+
+    const variantsTableBody = document.getElementById('variantsTableBody');
+    if (variantsTableBody && !variantsTableBody.dataset.actionsBound) {
+      variantsTableBody.dataset.actionsBound = '1';
+      variantsTableBody.addEventListener('click', (event) => {
+        const btn = event.target.closest('button[data-variant-action][data-index]');
+        if (!btn) return;
+        const index = Number(btn.dataset.index);
+        if (btn.dataset.variantAction === 'save') this.saveVariantRow(index);
+        if (btn.dataset.variantAction === 'delete') this.deleteVariantRow(index);
+      });
+    }
+
+    const mediaTableBody = document.getElementById('mediaTableBody');
+    if (mediaTableBody && !mediaTableBody.dataset.actionsBound) {
+      mediaTableBody.dataset.actionsBound = '1';
+      mediaTableBody.addEventListener('click', (event) => {
+        const btn = event.target.closest('button[data-media-action="delete"][data-index]');
+        if (!btn) return;
+        this.deleteMediaRow(Number(btn.dataset.index));
+      });
+    }
+
+    const documentsTableBody = document.getElementById('documentsTableBody');
+    if (documentsTableBody && !documentsTableBody.dataset.actionsBound) {
+      documentsTableBody.dataset.actionsBound = '1';
+      documentsTableBody.addEventListener('click', (event) => {
+        const btn = event.target.closest('button[data-document-action="delete"][data-index]');
+        if (!btn) return;
+        this.deleteDocumentRow(Number(btn.dataset.index));
+      });
+    }
+
+    const orderModalBody = document.getElementById('orderModalBody');
+    if (orderModalBody && !orderModalBody.dataset.actionsBound) {
+      orderModalBody.dataset.actionsBound = '1';
+      orderModalBody.addEventListener('click', (event) => {
+        const addBtn = event.target.closest('button[data-order-doc-action="add"]');
+        if (addBtn) {
+          this.addOrderModalDocumentRow();
+          return;
+        }
+        const removeBtn = event.target.closest('button[data-order-doc-action="remove"][data-index]');
+        if (removeBtn) this.removeOrderModalDocumentRow(Number(removeBtn.dataset.index));
+      });
+    }
+
+    const contentTabsList = document.getElementById('contentTabsList');
+    if (contentTabsList && !contentTabsList.dataset.actionsBound) {
+      contentTabsList.dataset.actionsBound = '1';
+      contentTabsList.addEventListener('click', (event) => {
+        const btn = event.target.closest('button[data-content-tab-id]');
+        if (!btn) return;
+        this.selectContentTab(Number(btn.dataset.contentTabId));
+      });
+    }
+
+    const contentBlocksList = document.getElementById('contentBlocksList');
+    if (contentBlocksList && !contentBlocksList.dataset.actionsBound) {
+      contentBlocksList.dataset.actionsBound = '1';
+      contentBlocksList.addEventListener('click', (event) => {
+        const btn = event.target.closest('button[data-content-action]');
+        if (!btn) return;
+        const action = String(btn.dataset.contentAction || '').trim();
+        if (action === 'remove-block') this.removeContentBlock(Number(btn.dataset.blockIndex));
+        if (action === 'add-table-row') this.addTableRowToBlock(Number(btn.dataset.blockIndex));
+        if (action === 'remove-table-row') this.removeTableRowFromBlock(Number(btn.dataset.blockIndex), Number(btn.dataset.rowIndex));
+        if (action === 'remove-table-row-node') this.removeTableRowNode(btn);
+      });
+    }
+
+    const pagination = document.getElementById('pagination');
+    if (pagination && !pagination.dataset.actionsBound) {
+      pagination.dataset.actionsBound = '1';
+      pagination.addEventListener('click', (event) => {
+        const btn = event.target.closest('button[data-page]');
+        if (!btn || btn.disabled) return;
+        this.goToPage(Number(btn.dataset.page));
       });
     }
 
@@ -1590,8 +1755,91 @@ class AdminApp {
     });
   }
 
+  hasMojibakeMarkers(value) {
+    const text = String(value || '');
+    return /(?:\u0420[\u0400-\u04ff]|\u0421[\u0400-\u04ff]|\u00d0.|\u00d1.|\u00c3.|\ufffd)/.test(text);
+  }
+
+  cp1251ByteFromChar(ch) {
+    const code = ch.charCodeAt(0);
+    if (code <= 0x7f) return code;
+    if (code >= 0xa0 && code <= 0xbf) return code;
+    const cp1251Special = {
+      0x0402: 0x80,
+      0x0403: 0x81,
+      0x201a: 0x82,
+      0x0453: 0x83,
+      0x201e: 0x84,
+      0x2020: 0x86,
+      0x2021: 0x87,
+      0x2030: 0x89,
+      0x0409: 0x8a,
+      0x2039: 0x8b,
+      0x040a: 0x8c,
+      0x040c: 0x8d,
+      0x040e: 0x8e,
+      0x040f: 0x8f,
+      0x0452: 0x90,
+      0x2018: 0x91,
+      0x2019: 0x92,
+      0x201c: 0x93,
+      0x201d: 0x94,
+      0x2022: 0x95,
+      0x2013: 0x96,
+      0x2014: 0x97,
+      0x2122: 0x99,
+      0x0459: 0x9a,
+      0x203a: 0x9b,
+      0x045a: 0x9c,
+      0x045c: 0x9d,
+      0x045e: 0xa2,
+      0x045f: 0x9f,
+      0x0406: 0xb2,
+      0x0456: 0xb3,
+      0x0407: 0xaf,
+      0x0457: 0xbf,
+      0x0490: 0xa5,
+      0x0491: 0xb4,
+      0x0455: 0xbe,
+      0x0454: 0xba,
+      0x0404: 0xaa
+    };
+    if (cp1251Special[code] !== undefined) return cp1251Special[code];
+    if (code === 0x0401) return 0xa8;
+    if (code === 0x0451) return 0xb8;
+    if (code >= 0x0410 && code <= 0x044f) return code - 0x350;
+    if (code === 0x2116) return 0xb9;
+    if (code === 0x2026) return 0x85;
+    if (code === 0x20ac) return 0x88;
+    return null;
+  }
+
+  tryFixMojibake(value) {
+    const text = String(value || '');
+    if (!this.hasMojibakeMarkers(text)) return text;
+    const bytes = [];
+    for (const ch of text) {
+      const b = this.cp1251ByteFromChar(ch);
+      if (b === null) return text;
+      bytes.push(b);
+    }
+    try {
+      const decoded = new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(bytes));
+      return decoded || text;
+    } catch {
+      return text;
+    }
+  }
+
+  displayText(value) {
+    return this.tryFixMojibake(value)
+      .replace(/\u00a0/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   escapeHtml(value) {
-    return String(value || '')
+    return this.displayText(value)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
@@ -1675,21 +1923,21 @@ class AdminApp {
       }
       tbody.innerHTML = rows.map((o) => `
         <tr>
-          <td>${o.id ?? ''}</td>
-          <td>${this.formatDateTime(o.createdAt)}</td>
-          <td>${o.customerName || ''}</td>
-          <td>${o.customerPhone || ''}</td>
-          <td>${o.customerAddress || ''}</td>
+          <td>${this.escapeHtml(o.id ?? '')}</td>
+          <td>${this.escapeHtml(this.formatDateTime(o.createdAt))}</td>
+          <td>${this.escapeHtml(o.customerName || '')}</td>
+          <td>${this.escapeHtml(o.customerPhone || '')}</td>
+          <td>${this.escapeHtml(o.customerAddress || '')}</td>
           <td>${this.escapeHtml(this.getPaymentMethodLabel(o.paymentMethod))}</td>
           <td>${this.formatPaymentStatusBadge(o.paymentStatus)}</td>
           <td>${this.escapeHtml(this.getDeliveryMethodLabel(o.deliveryMethod))}</td>
-          <td>${o.manager || ''}</td>
-          <td>${o.itemCount ?? 0}</td>
-          <td>${this.formatPrice(o.total)}</td>
+          <td>${this.escapeHtml(o.manager || '')}</td>
+          <td>${this.escapeHtml(o.itemCount ?? 0)}</td>
+          <td>${this.escapeHtml(this.formatPrice(o.total))}</td>
           <td>${this.formatOrderStatusBadge(o.status)}</td>
           <td>
             <div class="action-buttons">
-              <button type="button" class="btn-action" onclick="viewOrderDetails('${o.id}')">Детали</button>
+              <button type="button" class="btn-action" data-order-action="details" data-id="${this.escapeHtml(String(o.id || ''))}">Детали</button>
             </div>
           </td>
         </tr>
@@ -1797,12 +2045,12 @@ class AdminApp {
           <td>${this.escapeHtml(r.attributeName || r.attributeCode || '')}</td>
           <td>
             <label class="checkbox">
-              <input type="checkbox" ${r.required ? 'checked' : ''} onchange="toggleTemplateRequired(${Number(r.id)}, this.checked)" />
+              <input type="checkbox" data-template-action="toggle-required" data-id="${Number(r.id)}" ${r.required ? 'checked' : ''} />
               <span>${r.required ? 'Да' : 'Нет'}</span>
             </label>
           </td>
           <td>
-            <button class="btn btn-outline btn-xs" onclick="deleteCategoryAttributeTemplate(${Number(r.id)})">Удалить</button>
+            <button class="btn btn-outline btn-xs" type="button" data-template-action="delete" data-id="${Number(r.id)}">Удалить</button>
           </td>
         </tr>
       `).join('');
@@ -2133,7 +2381,7 @@ class AdminApp {
       <section class="order-modal-section" style="margin-top:12px;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
           <h4 style="margin:0;">Файлы/документы заказа</h4>
-          <button type="button" class="btn btn-outline btn-xs" onclick="addOrderModalDocumentRow()">Добавить файл</button>
+          <button type="button" class="btn btn-outline btn-xs" data-order-doc-action="add">Добавить файл</button>
         </div>
         <table class="order-lines" style="margin-top:8px;">
           <thead><tr><th>Тип</th><th>Название</th><th>URL</th><th></th></tr></thead>
@@ -2170,7 +2418,7 @@ class AdminApp {
         </td>
         <td><input class="input order-doc-title" type="text" value="${this.escapeHtml(doc.title || '')}" placeholder="Название документа" /></td>
         <td><input class="input order-doc-url" type="text" value="${this.escapeHtml(doc.url || '')}" placeholder="https://..." /></td>
-        <td style="text-align:right;"><button type="button" class="btn btn-danger btn-xs" onclick="removeOrderModalDocumentRow(${index})">Удалить</button></td>
+        <td style="text-align:right;"><button type="button" class="btn btn-danger btn-xs" data-order-doc-action="remove" data-index="${index}">Удалить</button></td>
       </tr>
     `).join('');
   }
@@ -2315,7 +2563,7 @@ class AdminApp {
 
       tr.innerHTML = `
         <td>
-          <input type="checkbox" class="product-checkbox" data-id="${product.id}" onchange="toggleProductSelection('${product.id}')">
+          <input type="checkbox" class="product-checkbox" data-id="${product.id}">
         </td>
         <td>
           <button
@@ -2327,25 +2575,25 @@ class AdminApp {
             title="${photoActionLabel}"
           >
             ${product.image
-              ? `<img src="${product.image}" alt="${safeName}" class="product-photo">`
+              ? `<img src="${this.escapeHtml(product.image)}" alt="${safeName}" class="product-photo">`
               : '<div class="product-photo product-photo-placeholder"><span class="material-symbols-rounded msi" aria-hidden="true">image</span></div>'}
           </button>
         </td>
         <td>
           <div class="product-name">
-            <strong>${product.name || '-'}</strong>
+            <strong>${this.escapeHtml(product.name || '-')}</strong>
             ${product.is_extra ? '<div class="extra-indicator">Доп. импорт (Extra)</div>' : ''}
             ${Number(product.isConflict || 0) ? `<div class="conflict-indicator" title="${this.escapeHtml(String(product.conflictNote || 'Data conflict'))}">Конфликт данных</div>` : ''}
           </div>
         </td>
-        <td>${product.article || '-'}</td>
-        <td>${product.brand || '-'}</td>
+        <td>${this.escapeHtml(product.article || '-')}</td>
+        <td>${this.escapeHtml(product.brand || '-')}</td>
         <td>
-          <div>${product.category || '-'}</div>
-          <small style="color:#6b7280">${groupValue}</small>
+          <div>${this.escapeHtml(product.category || '-')}</div>
+          <small style="color:#6b7280">${this.escapeHtml(groupValue)}</small>
         </td>
         <td>
-          <span class="status-badge ${status.css}">${status.text}</span>
+          <span class="status-badge ${status.css}">${this.escapeHtml(status.text)}</span>
           ${hasVariantConflict ? '<br><small style="color:#b45309">No active variants</small>' : ''}
         </td>
         <td>
@@ -2417,7 +2665,7 @@ class AdminApp {
   }
 
   normalizeText(value) {
-    return String(value || '').toLowerCase().trim();
+    return this.displayText(value).toLowerCase().trim();
   }
 
   getSelectedFunctionalCategories() {
@@ -2638,7 +2886,7 @@ class AdminApp {
     const resetBtn = document.createElement('button');
     resetBtn.className = 'btn btn-outline btn-xs';
     resetBtn.textContent = 'Сброс';
-    resetBtn.onclick = () => {
+    resetBtn.addEventListener('click', () => {
       if (key === 'price') {
         this.headerFilter.tempValue = { min: '', max: '' };
         this.columnFilters.priceMin = '';
@@ -2649,11 +2897,11 @@ class AdminApp {
       }
       this.closeHeaderFilter();
       this.applyFilters();
-    };
+    });
     const okBtn = document.createElement('button');
     okBtn.className = 'btn btn-primary btn-xs';
     okBtn.textContent = 'OK';
-    okBtn.onclick = () => {
+    okBtn.addEventListener('click', () => {
       if (key === 'price') {
         const value = this.headerFilter.tempValue && typeof this.headerFilter.tempValue === 'object'
           ? this.headerFilter.tempValue
@@ -2665,7 +2913,7 @@ class AdminApp {
       }
       this.closeHeaderFilter();
       this.applyFilters();
-    };
+    });
     footer.appendChild(resetBtn);
     footer.appendChild(okBtn);
     popover.appendChild(footer);
@@ -3312,8 +3560,8 @@ class AdminApp {
           </select>
         </td>
         <td class="variant-actions">
-          <button class="btn btn-primary" onclick="saveVariantRow(${index})">Сохранить</button>
-          <button class="btn btn-outline" onclick="deleteVariantRow(${index})">Удалить</button>
+          <button class="btn btn-primary" type="button" data-variant-action="save" data-index="${index}">Сохранить</button>
+          <button class="btn btn-outline" type="button" data-variant-action="delete" data-index="${index}">Удалить</button>
         </td>
       `;
 
@@ -3557,7 +3805,7 @@ class AdminApp {
         <td><input class="input media-variant" value="${this.escapeHtml(String(m.variantId || ''))}" placeholder="" /></td>
         <td style="text-align:center;"><input type="checkbox" class="media-cover" ${m.isCover ? 'checked' : ''} /></td>
         <td><input class="input media-order" type="number" min="0" step="1" value="${m.sortOrder}" /></td>
-        <td><button class="btn btn-outline btn-xs media-action-btn" type="button" onclick="deleteMediaRow(${index})" aria-label="Удалить фото"><span class="material-symbols-rounded msi" aria-hidden="true">delete</span></button></td>
+        <td><button class="btn btn-outline btn-xs media-action-btn" type="button" data-media-action="delete" data-index="${index}" aria-label="Удалить фото"><span class="material-symbols-rounded msi" aria-hidden="true">delete</span></button></td>
       `;
       const urlInput = tr.querySelector('.media-url');
       const previewCell = tr.querySelector('.admin-media-preview-cell');
@@ -3664,7 +3912,7 @@ class AdminApp {
         <td><input class="input doc-url" value="${this.escapeHtml(d.url)}" placeholder="https://..." /></td>
         <td><input class="input doc-variant" value="${this.escapeHtml(String(d.variantId || ''))}" /></td>
         <td><input class="input doc-order" type="number" min="0" step="1" value="${d.sortOrder}" /></td>
-        <td><button class="btn btn-outline" onclick="deleteDocumentRow(${index})">Удалить</button></td>
+        <td><button class="btn btn-outline" type="button" data-document-action="delete" data-index="${index}">Удалить</button></td>
       `;
       tbody.appendChild(tr);
     });
@@ -3761,7 +4009,7 @@ class AdminApp {
       btn.type = 'button';
       btn.className = `content-tab-item ${Number(tab.id) === Number(this.selectedContentTabId) ? 'active' : ''}`;
       btn.textContent = tab.title || tab.code || `Tab ${tab.id}`;
-      btn.onclick = () => this.selectContentTab(tab.id);
+      btn.dataset.contentTabId = String(tab.id);
       listEl.appendChild(btn);
     });
 
@@ -3815,7 +4063,7 @@ class AdminApp {
             <div class=\"table-editor\">
               <div class=\"table-editor-head\">
                 <strong>Таблица Параметр / Значение</strong>
-                <button class=\"btn btn-outline btn-xs\" onclick=\"addTableRowToBlock(${index})\">+ Строка</button>
+                <button class=\"btn btn-outline btn-xs\" type=\"button\" data-content-action=\"add-table-row\" data-block-index=\"${index}\">+ Строка</button>
               </div>
               <div class=\"table-rows\" data-block-index=\"${index}\">
                 ${
@@ -3826,7 +4074,7 @@ class AdminApp {
                     <div class=\"table-row-item\">
                       <input class=\"input table-param\" placeholder=\"Параметр\" value=\"${(r?.param ?? '').toString()}\">
                       <input class=\"input table-value\" placeholder=\"Значение\" value=\"${(r?.value ?? '').toString()}\">
-                      <button class=\"btn btn-outline btn-xs\" onclick=\"removeTableRowFromBlock(${index}, ${ridx})\">Удалить</button>
+                      <button class=\"btn btn-outline btn-xs\" type=\"button\" data-content-action=\"remove-table-row\" data-block-index=\"${index}\" data-row-index=\"${ridx}\">Удалить</button>
                     </div>
                   `
                         )
@@ -3836,7 +4084,7 @@ class AdminApp {
               </div>
             </div>
           </div>
-          <button class=\"btn btn-outline\" onclick=\"removeContentBlock(${index})\">Удалить</button>
+          <button class=\"btn btn-outline\" type=\"button\" data-content-action=\"remove-block\" data-block-index=\"${index}\">Удалить</button>
         </div>
       `;
       blocksEl.appendChild(row);
@@ -3920,7 +4168,7 @@ class AdminApp {
     row.innerHTML = `
       <input class=\"input table-param\" placeholder=\"Параметр\" value=\"\">
       <input class=\"input table-value\" placeholder=\"Значение\" value=\"\">
-      <button class=\"btn btn-outline btn-xs\" onclick=\"removeTableRowNode(this)\">Удалить</button>
+      <button class=\"btn btn-outline btn-xs\" type=\"button\" data-content-action=\"remove-table-row-node\">Удалить</button>
     `;
     rowsWrap.appendChild(row);
   }
@@ -4036,16 +4284,16 @@ class AdminApp {
     let html = `
       <div class="pagination-info">Показано ${Math.min(offset + 1, total || 0)}-${Math.min(offset + limit, total)} из ${total}</div>
       <div class="pagination-controls">
-        <button class="pagination-btn" ${!canGoPrev ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">← Назад</button>
+        <button class="pagination-btn" ${!canGoPrev ? 'disabled' : ''} data-page="${currentPage - 1}">← Назад</button>
     `;
 
     const startPage = Math.max(1, currentPage - 2);
     const endPage = Math.min(totalPages, currentPage + 2);
     for (let i = startPage; i <= endPage; i += 1) {
-      html += `<button class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+      html += `<button class="pagination-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
     }
 
-    html += `<button class="pagination-btn" ${!canGoNext ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">Вперед →</button></div>`;
+    html += `<button class="pagination-btn" ${!canGoNext ? 'disabled' : ''} data-page="${currentPage + 1}">Вперед →</button></div>`;
     paginationEl.innerHTML = html;
   }
 

@@ -1,3 +1,5 @@
+const { createOrderSchema, formatZodError } = require("./order-schema");
+
 function createLookupLimiter({
   windowMs = 60_000,
   maxRequests = 20,
@@ -114,70 +116,71 @@ function registerPublicRoutes(app, deps) {
     listPublicOrdersByLookup
   } = deps;
 
-  app.get("/api/health", (req, res) => {
-    res.json({
-      ok: true,
-      dbPath,
-      stats: getStats(),
-      eurRubRate: getLatestExchangeRate("EUR", "RUB") || null,
-      now: new Date().toISOString()
-    });
+  app.get("/api/health", async (req, res) => {
+    try {
+      const [stats, eurRubRate] = await Promise.all([
+        Promise.resolve(getStats()),
+        Promise.resolve(getLatestExchangeRate("EUR", "RUB")),
+      ]);
+      res.json({
+        ok: true,
+        dbPath,
+        stats,
+        eurRubRate: eurRubRate || null,
+        now: new Date().toISOString()
+      });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: String(err.message || err) });
+    }
   });
 
-  app.get("/api/exchange-rate", (req, res) => {
-    const eurRub = getLatestExchangeRate("EUR", "RUB");
-    res.json({ eurRub });
+  app.get("/api/exchange-rate", async (req, res) => {
+    try {
+      const eurRub = await Promise.resolve(getLatestExchangeRate("EUR", "RUB"));
+      res.json({ eurRub });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: String(err.message || err) });
+    }
   });
 
-  app.get("/api/products", (req, res) => {
-    res.json(listProducts());
+  app.get("/api/products", async (req, res) => {
+    try {
+      res.json(await Promise.resolve(listProducts()));
+    } catch (err) {
+      res.status(500).json({ ok: false, error: String(err.message || err) });
+    }
   });
 
-  app.post("/api/orders", (req, res) => {
-    const { customer, items, total, paymentMethod, deliveryComment } = req.body || {};
-
-    if (!customer?.name || !customer?.phone || !customer?.address) {
-      return res.status(400).json({ error: "Please provide name, phone and address." });
+  app.post("/api/orders", async (req, res) => {
+    const parsed = createOrderSchema.safeParse(req.body || {});
+    if (!parsed.success) {
+      return res.status(400).json({
+        ok: false,
+        error: formatZodError(parsed.error)
+      });
     }
 
-    if (String(customer.name).trim().length > 200) {
-      return res.status(400).json({ error: "Name is too long." });
-    }
-    if (String(customer.phone).trim().length > 50) {
-      return res.status(400).json({ error: "Phone is too long." });
-    }
-    if (String(customer.address).trim().length > 500) {
-      return res.status(400).json({ error: "Address is too long." });
-    }
-    if (customer.email && String(customer.email).trim().length > 254) {
-      return res.status(400).json({ error: "Email is too long." });
-    }
+    try {
+      const order = await Promise.resolve(createOrder({
+        customer: parsed.data.customer,
+        items: parsed.data.items,
+        total: parsed.data.total,
+        paymentMethod: parsed.data.paymentMethod,
+        deliveryComment: parsed.data.deliveryComment
+      }));
 
-    if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: "Cart is empty." });
+      return res.status(201).json({
+        ok: true,
+        orderId: order.orderId,
+        status: order.status,
+        paymentStatus: order.paymentStatus,
+        paymentMethod: order.paymentMethod,
+        deliveryMethod: order.deliveryMethod,
+        message: "Order accepted. We'll contact you shortly."
+      });
+    } catch (err) {
+      return res.status(500).json({ ok: false, error: String(err.message || err) });
     }
-
-    if (items.length > 200) {
-      return res.status(400).json({ error: "Too many items in cart." });
-    }
-
-    const order = createOrder({
-      customer,
-      items,
-      total,
-      paymentMethod,
-      deliveryComment
-    });
-
-    return res.status(201).json({
-      ok: true,
-      orderId: order.orderId,
-      status: order.status,
-      paymentStatus: order.paymentStatus,
-      paymentMethod: order.paymentMethod,
-      deliveryMethod: order.deliveryMethod,
-      message: "Order accepted. We'll contact you shortly."
-    });
   });
 
   const lookupLimiter = createLookupLimiter({
@@ -185,18 +188,22 @@ function registerPublicRoutes(app, deps) {
     maxRequests: Math.max(1, Number(process.env.PUBLIC_LOOKUP_RATE_LIMIT || 20))
   });
 
-  app.get("/api/orders/lookup", lookupLimiter, (req, res) => {
+  app.get("/api/orders/lookup", lookupLimiter, async (req, res) => {
     const query = String(req.query.query || "").trim();
     const limit = Math.min(20, Math.max(1, Number(req.query.limit || 10)));
     if (query.length < 4) {
       return res.status(400).json({ ok: false, error: "Provide at least 4 characters for search." });
     }
-    const data = listPublicOrdersByLookup({ query, limit });
-    const publicRows = (Array.isArray(data.rows) ? data.rows : []).map(toPublicOrder);
-    return res.json({ ok: true, rows: publicRows, total: publicRows.length });
+    try {
+      const data = await Promise.resolve(listPublicOrdersByLookup({ query, limit }));
+      const publicRows = (Array.isArray(data.rows) ? data.rows : []).map(toPublicOrder);
+      return res.json({ ok: true, rows: publicRows, total: publicRows.length });
+    } catch (err) {
+      return res.status(500).json({ ok: false, error: String(err.message || err) });
+    }
   });
 
-  app.get("/api/orders/mine", lookupLimiter, (req, res) => {
+  app.get("/api/orders/mine", lookupLimiter, async (req, res) => {
     const idsRaw = String(req.query.ids || "").trim();
     const limit = Math.min(20, Math.max(1, Number(req.query.limit || 10)));
     const ids = idsRaw
@@ -205,9 +212,13 @@ function registerPublicRoutes(app, deps) {
       .filter(Boolean)
       .slice(0, limit);
     if (!ids.length) return res.json({ ok: true, rows: [], total: 0 });
-    const data = listPublicOrdersByIds({ ids, limit });
-    const publicRows = (Array.isArray(data.rows) ? data.rows : []).map(toPublicOrder);
-    return res.json({ ok: true, rows: publicRows, total: publicRows.length });
+    try {
+      const data = await Promise.resolve(listPublicOrdersByIds({ ids, limit }));
+      const publicRows = (Array.isArray(data.rows) ? data.rows : []).map(toPublicOrder);
+      return res.json({ ok: true, rows: publicRows, total: publicRows.length });
+    } catch (err) {
+      return res.status(500).json({ ok: false, error: String(err.message || err) });
+    }
   });
 }
 

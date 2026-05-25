@@ -78,7 +78,7 @@
         </nav>
         <div class="admin-user">
           <span id="adminTokenState" class="product-count">Token: not set</span>
-          <button class="btn btn-outline" type="button" onclick="logoutAdmin()">Выйти</button>
+          <button id="adminLogoutBtn" class="btn btn-outline" type="button">Выйти</button>
         </div>
       </div>
     </header>
@@ -238,7 +238,7 @@
               <div class="form-group">
                 <input id="newBrandName" class="input" type="text" placeholder="Новый бренд, например Hite Pro" />
               </div>
-              <button class="btn btn-primary" onclick="createBrand()">Создать бренд</button>
+              <button id="createBrandBtn" class="btn btn-primary" type="button">Создать бренд</button>
             </article>
 
             <article class="categories-create-card">
@@ -252,7 +252,7 @@
               <div class="form-group">
                 <input id="newFunctionalCategoryName" class="input" type="text" placeholder="Название категории, например Освещение" />
               </div>
-              <button class="btn btn-primary" onclick="createFunctionalCategory()">Создать функциональную</button>
+              <button id="createFunctionalCategoryBtn" class="btn btn-primary" type="button">Создать функциональную</button>
             </article>
 
             <article class="categories-create-card">
@@ -266,7 +266,7 @@
               <div class="form-group">
                 <input id="newBrandCategoryName" class="input" type="text" placeholder="Название категории, например Контроллеры" />
               </div>
-              <button class="btn btn-primary" onclick="createBrandCategory()">Создать брендовую</button>
+              <button id="createBrandCategoryBtn" class="btn btn-primary" type="button">Создать брендовую</button>
             </article>
           </div>
         </section>
@@ -307,7 +307,7 @@
         </div>
         <section class="search-strip" aria-label="Поиск заказов">
           <input type="text" id="ordersSearchInput" placeholder="ID, клиент, телефон, email, адрес" class="input search-strip-input" />
-          <button class="btn btn-link search-strip-reset" onclick="resetOrdersFilters()">Очистить</button>
+          <button id="resetOrdersFiltersBtn" class="btn btn-link search-strip-reset" type="button">Очистить</button>
         </section>
         <section class="search-strip orders-filters-strip" aria-label="Фильтры заказов">
           <select id="ordersStatusFilter" class="select search-strip-input">
@@ -402,7 +402,7 @@
             </div>
             <div class="form-group" style="display:flex;align-items:flex-end;gap:10px;">
               <label class="checkbox"><input type="checkbox" id="templateRequired" checked /> <span>Обязательное поле</span></label>
-              <button class="btn btn-primary" onclick="createCategoryAttributeTemplate()">Добавить правило</button>
+              <button id="createCategoryAttributeTemplateBtn" class="btn btn-primary" type="button">Добавить правило</button>
             </div>
           </div>
           <div class="table-wrapper" style="margin-top:12px;">
@@ -425,19 +425,19 @@
       <div id="productEditPage" class="admin-page" style="display: none;">
         <div class="page-header">
           <div class="page-title">
-            <button id="backToProductsBtn" type="button" class="btn btn-link" onclick="backToProducts()">← Назад к списку</button>
+            <button id="backToProductsBtn" type="button" class="btn btn-link">← Назад к списку</button>
             <h2 id="productTitle">Редактирование товара</h2>
           </div>
           <div class="page-actions">
             <div class="quality-indicator inline" id="qualityIndicator">Статус: —</div>
-            <button type="button" class="btn btn-outline" onclick="previewProduct()">Предпросмотр</button>
-            <button class="btn btn-primary" onclick="saveProduct()">Сохранить</button>
+            <button id="previewProductBtn" type="button" class="btn btn-outline">Предпросмотр</button>
+            <button id="saveProductBtn" class="btn btn-primary" type="button">Сохранить</button>
             <div class="dropdown">
               <button class="btn btn-outline">...</button>
               <div class="dropdown-menu">
-                <button type="button" onclick="duplicateProduct()">Дублировать</button>
-                <button type="button" onclick="archiveProduct()">Архивировать</button>
-                <button type="button" onclick="deleteProduct()">Удалить</button>
+                <button type="button" data-product-editor-action="duplicate">Дублировать</button>
+                <button type="button" data-product-editor-action="archive">Архивировать</button>
+                <button type="button" data-product-editor-action="delete">Удалить</button>
               </div>
             </div>
           </div>
@@ -466,7 +466,7 @@
                     <div class="product-main-photo-info">
                       <strong id="productMainPhotoLabel">Основное фото</strong>
                       <span id="productMainPhotoMeta">0 фото</span>
-                      <button type="button" class="btn btn-outline" onclick="adminPanel.switchEditorTab('photos')">Открыть вкладку «Фото»</button>
+                      <button id="openProductPhotosTabBtn" type="button" class="btn btn-outline">Открыть вкладку «Фото»</button>
                     </div>
                   </div>
                 </div>
@@ -556,7 +556,7 @@
                   <strong>Варианты товара</strong>
                   <span id="variantsCount">0 шт.</span>
                 </div>
-                <button class="btn btn-primary" onclick="addVariantRow()">+ Добавить вариант</button>
+                <button id="addVariantRowBtn" class="btn btn-primary" type="button">+ Добавить вариант</button>
               </div>
 
               <div class="editor-help-text">Нажмите «+ Фото», вставьте URL изображения и сразу увидите превью в строке.</div>
@@ -586,7 +586,7 @@
                 <aside class="content-tabs-sidebar">
                   <div class="content-tabs-header">
                     <strong>Вкладки</strong>
-                    <button class="btn btn-outline" onclick="addContentTab()">+ Вкладка</button>
+                    <button id="addContentTabBtn" class="btn btn-outline" type="button">+ Вкладка</button>
                   </div>
                   <div id="contentTabsList" class="content-tabs-list"></div>
                 </aside>
@@ -616,13 +616,13 @@
 
                     <div class="content-blocks-toolbar">
                       <strong>Блоки</strong>
-                      <button class="btn btn-outline" onclick="addContentBlock()">+ Блок</button>
+                      <button id="addContentBlockBtn" class="btn btn-outline" type="button">+ Блок</button>
                     </div>
                     <div id="contentBlocksList" class="content-blocks-list"></div>
 
                     <div class="content-actions">
-                      <button class="btn btn-primary" onclick="saveContentTab()">Сохранить вкладку</button>
-                      <button class="btn btn-danger" onclick="deleteContentTab()">Удалить вкладку</button>
+                      <button id="saveContentTabBtn" class="btn btn-primary" type="button">Сохранить вкладку</button>
+                      <button id="deleteContentTabBtn" class="btn btn-danger" type="button">Удалить вкладку</button>
                     </div>
                   </div>
                 </section>
@@ -634,8 +634,8 @@
                 <label>Атрибуты по шаблону категории</label>
                 <div id="productAttributesEditor" class="admin-card" style="padding:12px;"></div>
                 <div style="margin-top:8px;display:flex;gap:8px;">
-                  <button class="btn btn-outline" onclick="refreshAttributeEditor()">Обновить поля</button>
-                  <button class="btn btn-outline" onclick="syncAttributesFromRaw()">Из JSON в поля</button>
+                  <button id="refreshAttributeEditorBtn" class="btn btn-outline" type="button">Обновить поля</button>
+                  <button id="syncAttributesFromRawBtn" class="btn btn-outline" type="button">Из JSON в поля</button>
                 </div>
               </div>
               <div class="form-group full-width">
@@ -683,8 +683,8 @@
                   <span id="documentsCount">0 шт.</span>
                 </div>
                 <div>
-                  <button class="btn btn-outline" onclick="addDocumentRow()">+ Документ</button>
-                  <button class="btn btn-primary" onclick="saveDocuments()">Сохранить документы</button>
+                  <button id="addDocumentRowBtn" class="btn btn-outline" type="button">+ Документ</button>
+                  <button id="saveDocumentsBtn" class="btn btn-primary" type="button">Сохранить документы</button>
                 </div>
               </div>
               <div class="variants-table-wrapper">
@@ -733,11 +733,11 @@
     <div id="bulkModal" class="modal" style="display: none;">
       <div class="modal-header">
         <h3 id="bulkModalTitle">Массовое действие</h3>
-        <button class="modal-close" onclick="closeModal('bulkModal')">×</button>
+        <button class="modal-close" type="button" data-close-modal="bulkModal">×</button>
       </div>
       <div class="modal-body" id="bulkModalBody"></div>
       <div class="modal-footer">
-        <button class="btn btn-outline" onclick="closeModal('bulkModal')">Отмена</button>
+        <button class="btn btn-outline" type="button" data-close-modal="bulkModal">Отмена</button>
         <button class="btn btn-primary" id="bulkModalConfirm">Применить</button>
       </div>
     </div>
@@ -745,12 +745,12 @@
     <div id="orderModal" class="modal order-modal" style="display: none;">
       <div class="modal-header">
         <h3 id="orderModalTitle">Заказ</h3>
-        <button class="modal-close" onclick="closeModal('orderModal')">×</button>
+        <button class="modal-close" type="button" data-close-modal="orderModal">×</button>
       </div>
       <div class="modal-body" id="orderModalBody"></div>
       <div class="modal-footer">
-        <button class="btn btn-outline" onclick="closeModal('orderModal')">Закрыть</button>
-        <button class="btn btn-primary" onclick="saveOrderModal()">Сохранить</button>
+        <button class="btn btn-outline" type="button" data-close-modal="orderModal">Закрыть</button>
+        <button id="saveOrderModalBtn" class="btn btn-primary" type="button">Сохранить</button>
       </div>
     </div>
   </div>

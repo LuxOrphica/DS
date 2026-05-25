@@ -1,6 +1,6 @@
 import { FAVORITES_STORAGE_KEY } from './config.js';
 import { parseJsonList, pageTitle } from './utils.js';
-import { renderProductCard, rebalanceProductCardMedia, bindProductCardGalleries } from './products.js';
+import { rebalanceProductCardMedia, bindProductCardGalleries } from './products.js';
 import { PLACEHOLDER_IMAGE } from './config.js';
 import { addToCart, syncCardBuyBadges } from './cart.js';
 

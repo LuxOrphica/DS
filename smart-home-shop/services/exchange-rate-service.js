@@ -34,14 +34,14 @@
   async function refreshEurRubRate() {
     try {
       const payload = await fetchEurRubRateFromCbr();
-      const saved = upsertExchangeRate({
+      const saved = await Promise.resolve(upsertExchangeRate({
         base: "EUR",
         quote: "RUB",
         rate: payload.rate,
         effectiveDate: payload.effectiveDate,
         source: "cbr.ru"
-      });
-      recalculateProductPriceRub(Number(saved?.rate || payload.rate));
+      }));
+      await Promise.resolve(recalculateProductPriceRub(Number(saved?.rate || payload.rate)));
       return { ok: true, saved };
     } catch (error) {
       return { ok: false, error: String(error?.message || error) };

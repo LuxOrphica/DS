@@ -252,6 +252,62 @@ showAddedToCartToast._timer = null;
 
 const MY_ORDER_IDS_STORAGE_KEY = "smartHomeShopMyOrderIds";
 const MY_ORDER_IDS_LIMIT = 20;
+const CART_STORAGE_KEY = "smartHomeShopCart";
+
+function normalizeCartQty(value) {
+  const qty = Math.floor(Number(value));
+  if (!Number.isFinite(qty) || qty < 1) return 1;
+  return Math.min(qty, 99);
+}
+
+function buildCartItem(product, qty = 1) {
+  return {
+    id: product.id,
+    name: product.name,
+    article: product.article,
+    price: Number(product.price || 0),
+    priceRub: Number(product.price || 0),
+    priceCurrency: String(product.priceCurrency || 'RUB').toUpperCase(),
+    priceValue: Number(product.priceValue ?? product.price ?? 0),
+    image: product.image,
+    qty: normalizeCartQty(qty)
+  };
+}
+
+export function saveCart(state) {
+  try {
+    const rows = (state.cart || [])
+      .map((item) => ({
+        id: String(item && item.id || '').trim(),
+        qty: normalizeCartQty(item && item.qty)
+      }))
+      .filter((item) => item.id);
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(rows));
+  } catch {
+    // Ignore private mode / storage quota failures.
+  }
+}
+
+export function loadCart(state, products) {
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    const parsed = JSON.parse(String(raw || "[]"));
+    if (!Array.isArray(parsed)) return;
+    const byId = new Map((Array.isArray(products) ? products : []).map((product) => [String(product.id || ''), product]));
+    const next = [];
+    const seen = new Set();
+    for (const row of parsed) {
+      const id = String(row && row.id || '').trim();
+      if (!id || seen.has(id) || !byId.has(id)) continue;
+      seen.add(id);
+      next.push(buildCartItem(byId.get(id), row.qty));
+    }
+    state.cart = next;
+    if (next.length !== parsed.length) saveCart(state);
+  } catch {
+    state.cart = [];
+  }
+}
 
 function getStoredOrderIds() {
   try {
@@ -293,20 +349,11 @@ export function addToCart(state, productId, cartQtyEl, miniCartEl, options = {})
   if (existing) {
     existing.qty += 1;
   } else {
-    state.cart.push({
-      id: product.id,
-      name: product.name,
-      article: product.article,
-      price: Number(product.price || 0),
-      priceRub: Number(product.price || 0),
-      priceCurrency: String(product.priceCurrency || 'RUB').toUpperCase(),
-      priceValue: Number(product.priceValue ?? product.price ?? 0),
-      image: product.image,
-      qty: 1
-    });
+    state.cart.push(buildCartItem(product, 1));
   }
 
   state.lastOrder = null;
+  saveCart(state);
   updateCartBadges(state, cartQtyEl);
   if (miniCartEl) miniCartEl.classList.add('hidden');
   const showToast = options && options.showToast !== false;
@@ -319,7 +366,10 @@ export function changeQty(state, productId, delta) {
   item.qty += delta;
   if (item.qty <= 0) {
     state.cart = state.cart.filter((it) => it.id !== productId);
+  } else {
+    item.qty = normalizeCartQty(item.qty);
   }
+  saveCart(state);
 }
 
 export function getCartCount(state) {
@@ -449,7 +499,10 @@ function validateCheckoutCustomer(customer) {
 }
 
 function formatPhoneMask(raw) {
-  const digits = String(raw || "").replace(/\D+/g, "");
+  let digits = String(raw || "").replace(/\D+/g, "");
+  if (digits.startsWith("77") && digits.length > 11) {
+    digits = digits.slice(1);
+  }
   const normalized = digits.startsWith("8")
     ? `7${digits.slice(1)}`
     : digits.startsWith("7")
@@ -553,7 +606,6 @@ export function renderCartPage(state, appEl, changeQtyFn, updateCartBadgesFn, re
   const itemsCount = getCartCount(state);
   const total = getCartTotal(state);
   const products = Array.isArray(state.products) ? state.products : [];
-  const orderImageResolvers = buildOrderImageResolvers(products);
   const emptyCartRecommendations = pickEmptyCartRecommendations(products, 8);
   const checkoutStep = state.cart.length === 0 && state.lastOrder ? "success" : "cart";
   const goodsWord =
@@ -739,6 +791,7 @@ export function renderCartPage(state, appEl, changeQtyFn, updateCartBadgesFn, re
   appEl.querySelectorAll('[data-remove]').forEach((btn) => {
     btn.addEventListener('click', () => {
       state.cart = state.cart.filter((it) => it.id !== btn.dataset.remove);
+      saveCart(state);
       updateCartBadgesFn(state);
       renderCartPage(state, appEl, changeQtyFn, updateCartBadgesFn, renderMiniCartFn, miniCartEl, imageTagFn, formatPrice);
       renderMiniCartFn(state, miniCartEl, imageTagFn);
@@ -754,6 +807,7 @@ export function renderCartPage(state, appEl, changeQtyFn, updateCartBadgesFn, re
         onConfirm: () => {
           state.cart = [];
           state.lastOrder = null;
+          saveCart(state);
           updateCartBadgesFn(state);
           renderCartPage(state, appEl, changeQtyFn, updateCartBadgesFn, renderMiniCartFn, miniCartEl, imageTagFn, formatPrice);
           renderMiniCartFn(state, miniCartEl, imageTagFn);
@@ -809,6 +863,7 @@ export function renderCartPage(state, appEl, changeQtyFn, updateCartBadgesFn, re
         confirmText: 'Удалить',
         onConfirm: () => {
           state.cart = state.cart.filter((it) => !selectedIds.has(String(it.id || '').trim()));
+          saveCart(state);
           updateCartBadgesFn(state);
           renderCartPage(state, appEl, changeQtyFn, updateCartBadgesFn, renderMiniCartFn, miniCartEl, imageTagFn, formatPrice);
           renderMiniCartFn(state, miniCartEl, imageTagFn);
@@ -941,6 +996,7 @@ export function renderCartPage(state, appEl, changeQtyFn, updateCartBadgesFn, re
           paymentMethod: data.paymentMethod || 'card_on_delivery',
           deliveryMethod: data.deliveryMethod || ''
         };
+        saveCart(state);
         rememberOrderId(state.lastOrder.orderId);
 
         updateCartBadgesFn(state);

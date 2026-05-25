@@ -36,7 +36,7 @@ async function startServer(t, env = {}) {
   const projectRoot = path.join(__dirname, "..");
   const child = spawn(process.execPath, ["server.js"], {
     cwd: projectRoot,
-    env: { ...process.env, PORT: String(port), ...env },
+    env: { ...process.env, TURSO_URL: "", TURSO_AUTH_TOKEN: "", PORT: String(port), ...env },
     stdio: ["ignore", "pipe", "pipe"]
   });
 
@@ -138,6 +138,42 @@ test("public orders lookup finds order by normalized phone formats", async (t) =
   assert.equal(lookup.ok, true);
   assert.ok(Array.isArray(lookup.rows));
   assert.ok(lookup.rows.some((row) => row && row.id === created.orderId));
+});
+
+test("public orders endpoint rejects invalid payloads before database write", async (t) => {
+  const { baseUrl } = await startServer(t, { DISABLE_ADMIN_AUTH: "1" });
+
+  const missingCustomerRes = await fetch(`${baseUrl}/api/orders`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      customer: { name: "", phone: "+7 999", address: "Test Street 1" },
+      items: [{ id: "prd-invalid", name: "Invalid Item", qty: 1, price: 100 }],
+      total: 100
+    })
+  });
+  assert.equal(missingCustomerRes.status, 400);
+  const missingCustomerJson = await missingCustomerRes.json();
+  assert.equal(missingCustomerJson.ok, false);
+  assert.match(String(missingCustomerJson.error || ""), /customer\.name/i);
+
+  const badQtyRes = await fetch(`${baseUrl}/api/orders`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      customer: {
+        name: "Bad Qty Test",
+        phone: "+7 (999) 123-45-67",
+        address: "Test Street 1"
+      },
+      items: [{ id: "prd-invalid", name: "Invalid Item", qty: 0, price: 100 }],
+      total: 100
+    })
+  });
+  assert.equal(badQtyRes.status, 400);
+  const badQtyJson = await badQtyRes.json();
+  assert.equal(badQtyJson.ok, false);
+  assert.match(String(badQtyJson.error || ""), /items\.0\.qty/i);
 });
 
 test("public personal cabinet endpoint returns orders by stored ids", async (t) => {

@@ -34,6 +34,7 @@ import {
 
 import {
   changeQty,
+  loadCart,
   updateCartBadges,
   renderMiniCart,
   renderCartPage,
@@ -187,13 +188,6 @@ function bindSearch() {
     state.search = input.value.trim();
     renderRoute();
   };
-  const quickMatches = (q, limit = 8) => {
-    const query = String(q || "").trim();
-    if (!query) return [];
-    const scoped = getSearchScope().items;
-    return scoped.filter((p) => productMatchesSearch(p, query)).slice(0, limit);
-  };
-
   const getSearchScope = () => {
     const path = String(location.pathname || "/catalog");
     const parts = path.replace(/^\//, "").split("/");
@@ -667,7 +661,7 @@ function setupMobileMenu() {
         </div>
         <div class="main-nav-catalog-list">
           ${categories
-            .map((cat, index) => `
+            .map((cat) => `
               <section class="main-nav-catalog-group">
                 <button type="button" class="main-nav-catalog-toggle" aria-expanded="false">
                   <span class="main-nav-catalog-main">${escapeHtml(cat.name)}</span>
@@ -1025,6 +1019,15 @@ function renderRoute() {
 // Application bootstrap
 async function init() {
   try {
+    applySafeHtml(appEl, `
+      <section class="app-loading" aria-live="polite">
+        <div class="app-loading__head">
+          <span class="app-loading__spinner" aria-hidden="true"></span>
+          <h1>Загружаем каталог</h1>
+        </div>
+        <p>Подтягиваем товары, цены и изображения.</p>
+      </section>
+    `);
     applyRandomLogoAccent();
     if ("scrollRestoration" in history) {
       history.scrollRestoration = "manual";
@@ -1032,8 +1035,7 @@ async function init() {
     const response = await fetch("/api/products");
     const rawProducts = await response.json();
     const visibleProducts = rawProducts.filter((x) => isStorefrontVisibleProduct(x));
-    console.log('DEBUG init: loaded', rawProducts.length, 'products, visible', visibleProducts.length);
-    
+
     state.products = visibleProducts.map((x) => {
       const sanitized = sanitizeCatalogProduct({
         ...x,
@@ -1045,6 +1047,7 @@ async function init() {
     });
 
     loadFavorites(state);
+    loadCart(state, state.products);
     updateCartBadges(state, cartQtyEl);
     if (miniCartEl) miniCartEl.classList.add("hidden");
     setupMobileMenu();

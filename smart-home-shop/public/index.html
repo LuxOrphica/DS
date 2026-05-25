@@ -65,7 +65,15 @@
     <div id="miniCart" class="mini-cart hidden"></div>
 
     <main class="container page">
-      <div id="app"></div>
+      <div id="app">
+        <section class="app-loading" aria-live="polite">
+          <div class="app-loading__head">
+            <span class="app-loading__spinner" aria-hidden="true"></span>
+            <h1>Загружаем каталог</h1>
+          </div>
+          <p>Подтягиваем товары, цены и изображения.</p>
+        </section>
+      </div>
     </main>
     <nav class="mobile-bottom-nav" aria-label="Mobile quick nav">
       <a href="/catalog" class="mobile-bottom-link" aria-label="Home">

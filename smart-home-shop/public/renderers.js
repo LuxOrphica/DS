@@ -294,7 +294,7 @@ const CATEGORY_BROWSER_ORDER = {
   ]
 };
 
-function normalizeCatalogBrowserSubcategory(topCategoryName, rawSubcategory, product = null) {
+function normalizeCatalogBrowserSubcategory(topCategoryName, rawSubcategory, _product = null) {
   const top = canonicalTopCategoryName(topCategoryName);
   const value = fixMojibake(String(rawSubcategory || "")).replace(/\s+/g, " ").trim();
   if (!top || !value || isHiddenShowcaseCategory(top)) return "";
@@ -508,9 +508,6 @@ const facetHelpers = createFacetHelpers({
   formatValue: formatFacetFilterValue
 });
 const {
-  splitMulti,
-  parseFacetNumericValue,
-  compareFacetOptionsByKey,
   countSingle,
   countMulti,
   matchesSingle,
@@ -570,7 +567,7 @@ function mergeBrandOptions(options) {
   return Array.from(map.values()).sort((a, b) => a.value.localeCompare(b.value, "ru"));
 }
 
-function compactFilterOptions(options, selectedSet) {
+function compactFilterOptions(options, _selectedSet) {
   const out = [];
   for (const opt of options || []) {
     const value = String((opt && opt.value) || "").trim();
@@ -637,7 +634,7 @@ function pickMainBrands(products, limit = 14) {
     .map(([brand, count]) => ({ brand, count }));
 }
 
-function buildTaskCards(byTopCategory) {
+function _buildTaskCards(byTopCategory) {
   const defs = [
     { key: "apt", title: "Квартира", text: "Свет, сценарии и комфорт в помещениях.", targets: ["Освещение", "Управление и автоматизация"] },
     { key: "house", title: "Частный дом", text: "Климат, безопасность и управление участком.", targets: ["Климат", "Безопасность и доступ"] },
@@ -660,7 +657,7 @@ function buildTaskCards(byTopCategory) {
 function hasBrokenBreadcrumbText(value) {
   const s = String(value || "").trim();
   if (!s) return false;
-  return /(?:Р[Ѐ-ӿ]|С[Ѐ-ӿ]|Ð.|Ñ.|Ã.|�)/.test(s);
+  return /(?:\u0420[\u0400-\u04ff]|\u0421[\u0400-\u04ff]|\u00d0.|\u00d1.|\u00c3.|\ufffd)/.test(s);
 }
 
 function renderAdaptiveBreadcrumbs(parts) {
@@ -716,8 +713,6 @@ export function renderCatalog(state, appEl, bindSearch, toggleFavoriteFn) {
   const searchProducts = state.search ? state.products.filter((p) => productMatchesSearch(p, state.search)).slice(0, 120) : [];
   const popularProducts = pickPopularProducts(state.products, 10);
   const brandStrip = pickMainBrands(state.products, 14);
-  const taskCards = buildTaskCards(byTopCategory);
-
   applySafeHtml(appEl, `
     ${
       state.search

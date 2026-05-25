@@ -36,7 +36,7 @@ async function startServer(t, env = {}) {
   const projectRoot = path.join(__dirname, "..");
   const child = spawn(process.execPath, ["server.js"], {
     cwd: projectRoot,
-    env: { ...process.env, PORT: String(port), ...env },
+    env: { ...process.env, TURSO_URL: "", TURSO_AUTH_TOKEN: "", PORT: String(port), ...env },
     stdio: ["ignore", "pipe", "pipe"]
   });
 
@@ -154,6 +154,16 @@ test("admin products filter labels keep readable text (no question-mark placehol
   assert.doesNotMatch(html, /id="maxPriceFilter"/);
   assert.match(html, /class="head-filter-btn" data-filter-key="price"/);
   assert.match(html, /id="hfPriceBadge"/);
+});
+
+test("admin panel avoids inline event handlers blocked by CSP", () => {
+  const root = path.join(__dirname, "..", "public");
+  const html = fs.readFileSync(path.join(root, "admin-new.html"), "utf8");
+  const js = fs.readFileSync(path.join(root, "admin-new.js"), "utf8");
+  const source = `${html}\n${js}`;
+
+  assert.doesNotMatch(source, /\son(?:click|change|input|submit|keydown|keyup)=/i);
+  assert.doesNotMatch(source, /javascript:/i);
 });
 
 test("admin orders endpoint supports get and patch flow", async (t) => {

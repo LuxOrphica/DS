@@ -1,6 +1,6 @@
-import { BRAND_STANDARD_SUBCATEGORIES, PLACEHOLDER_IMAGE } from "./config.js";
-import { slugify, pageTitle, imageTag, searchRow, productMatchesSearch, normalizeMeasurementValue, applySafeHtml, fixMojibake, getProductPriceView, favoriteIconMarkup } from "./utils.js";
-import { renderProductCard, getUnifiedBrandSubcategory, getProductBrand, rebalanceProductCardMedia, bindProductCardGalleries } from "./products.js";
+import { PLACEHOLDER_IMAGE } from "./config.js";
+import { slugify, pageTitle, searchRow, productMatchesSearch, normalizeMeasurementValue, applySafeHtml, fixMojibake, getProductPriceView, favoriteIconMarkup } from "./utils.js";
+import { getUnifiedBrandSubcategory, getProductBrand, rebalanceProductCardMedia, bindProductCardGalleries } from "./products.js";
 import { isFavorite, toggleFavorite } from "./favorites.js";
 import { addToCart, syncCardBuyBadges } from "./cart.js";
 import { getCategoryFacetProfile, applyFacetProfile } from "./facet-profiles.js";
@@ -464,9 +464,6 @@ const facetHelpers = createFacetHelpers({
   formatValue: formatBrandFacetValue
 });
 const {
-  splitMulti,
-  parseFacetNumericValue,
-  compareFacetOptionsByKey,
   countSingle,
   countMulti,
   matchesSingle,
@@ -474,13 +471,13 @@ const {
   matchesMultiAll,
   renderCheckGroup
 } = facetHelpers;
-function shouldShowFacetGroup(brandName, options, selectedSet, allowSingle = false) {
+function shouldShowFacetGroup(brandName, options, selectedSet, _allowSingle = false) {
   const hasSelection = selectedSet instanceof Set && selectedSet.size > 0;
   const optionCount = Array.isArray(options) ? options.length : 0;
   return optionCount > 0 || hasSelection;
 }
 
-function compactFacetOptions(options, selectedSet) {
+function compactFacetOptions(options, _selectedSet) {
   const rows = Array.isArray(options) ? options : [];
   return rows.filter((row) => {
     const value = String((row && row.value) || "").trim();
