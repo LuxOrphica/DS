@@ -512,7 +512,6 @@ const {
   countMulti,
   matchesSingle,
   matchesMulti,
-  matchesMultiAll,
   renderCheckGroup,
   detectContext
 } = facetHelpers;
@@ -916,7 +915,7 @@ export function renderCategory(state, appEl, categorySlug, subCategorySlug, bind
     if (!productMatchesSearch(p, state.search)) return false;
     if (selectedBrandKeys.size > 0 && !selectedBrandKeys.has(normalizeBrandKey(canonicalBrandLabel(getProductBrand(p))))) return false;
     if (!matchesSingle(p.systemType, selected.systemTypes, "systemTypes")) return false;
-    if (!matchesMultiAll(p.protocol, selected.protocols, "protocols")) return false;
+    if (!matchesMulti(p.protocol, selected.protocols, "protocols")) return false;
     if (!matchesMulti(p.mounting, selected.mountings, "mountings")) return false;
     if (!matchesSingle(normalizeMeasurementValue("voltage", p.supplyVoltage), selected.supplyVoltages, "supplyVoltages")) return false;
     if (!matchesSingle(p.channels, selected.channels, "channels")) return false;
@@ -1170,7 +1169,7 @@ export function renderCategory(state, appEl, categorySlug, subCategorySlug, bind
       if (!productMatchesSearch(p, state.search)) return false;
       if (selectedBrandKeysSnapshot.size > 0 && !selectedBrandKeysSnapshot.has(normalizeBrandKey(canonicalBrandLabel(getProductBrand(p))))) return false;
       if (!matchesSingle(p.systemType, selectedSnapshot.systemTypes, "systemTypes")) return false;
-      if (!matchesMultiAll(p.protocol, selectedSnapshot.protocols, "protocols")) return false;
+      if (!matchesMulti(p.protocol, selectedSnapshot.protocols, "protocols")) return false;
       if (!matchesMulti(p.mounting, selectedSnapshot.mountings, "mountings")) return false;
       if (!matchesSingle(normalizeMeasurementValue("voltage", p.supplyVoltage), selectedSnapshot.supplyVoltages, "supplyVoltages")) return false;
       if (!matchesSingle(p.channels, selectedSnapshot.channels, "channels")) return false;
@@ -1322,10 +1321,20 @@ export function renderCategory(state, appEl, categorySlug, subCategorySlug, bind
       applyBtn.classList.remove("is-empty");
     }
   };
+  let desktopAutoApplyTimer = null;
+  const isDesktopFilterMode = () => !window.matchMedia("(max-width: 980px)").matches;
+  const scheduleDesktopAutoApply = () => {
+    if (!isDesktopFilterMode()) return;
+    if (desktopAutoApplyTimer) window.clearTimeout(desktopAutoApplyTimer);
+    desktopAutoApplyTimer = window.setTimeout(() => {
+      applyDraftFilters();
+    }, 120);
+  };
   appEl.querySelectorAll("[data-filter-key]").forEach((input) => {
     input.addEventListener("change", () => {
       updateApplyButton();
       renderSelectedChips();
+      scheduleDesktopAutoApply();
     });
   });
   const minPriceFilter = document.getElementById("minPriceFilter");
@@ -1333,10 +1342,12 @@ export function renderCategory(state, appEl, categorySlug, subCategorySlug, bind
   if (minPriceFilter) minPriceFilter.addEventListener("input", () => {
     updateApplyButton();
     renderSelectedChips();
+    scheduleDesktopAutoApply();
   });
   if (maxPriceFilter) maxPriceFilter.addEventListener("input", () => {
     updateApplyButton();
     renderSelectedChips();
+    scheduleDesktopAutoApply();
   });
   updateApplyButton();
   renderSelectedChips();
@@ -1370,6 +1381,10 @@ export function renderCategory(state, appEl, categorySlug, subCategorySlug, bind
     sortBackdrop.hidden = true;
   };
   const applyDraftFilters = () => {
+    if (desktopAutoApplyTimer) {
+      window.clearTimeout(desktopAutoApplyTimer);
+      desktopAutoApplyTimer = null;
+    }
     const draft = collectDraftFilters();
     filterKeys.forEach((key) => {
       state.filters[key] = Array.isArray(draft[key]) ? draft[key] : [];

@@ -129,6 +129,27 @@ function priceRub(product) {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+function protocolValues(product) {
+  return String(product?.protocol || "")
+    .split(/[;,|]+/g)
+    .map((raw) => {
+      const value = String(raw || "").trim();
+      if (/rs[\s-]?485/i.test(value)) return "RS-485";
+      if (/modbus/i.test(value)) return "Modbus";
+      if (/ethernet/i.test(value)) return "Ethernet";
+      if (/wi[\s-]?fi/i.test(value)) return "Wi-Fi";
+      if (/zigbee/i.test(value)) return "Zigbee";
+      if (/z[\s-]?wave/i.test(value)) return "Z-Wave";
+      if (/dali/i.test(value)) return "DALI";
+      if (/bluetooth|\bble\b/i.test(value)) return "BLE";
+      if (/knx/i.test(value)) return "KNX";
+      if (/mqtt/i.test(value)) return "MQTT";
+      if (/\bcan\b/i.test(value)) return "CAN";
+      return value;
+    })
+    .filter(Boolean);
+}
+
 test("catalog filter matrix matches real product data", async (t) => {
   const { baseUrl } = await startServer(t);
   const productsRes = await fetch(`${baseUrl}/api/products`);
@@ -179,12 +200,30 @@ test("catalog filter matrix matches real product data", async (t) => {
     await firstBrand.check();
     const expectedIds = baseIds.filter((id) => String(byId.get(id)?.brand || "") === brand);
     assert.ok(expectedIds.length > 0, `expected products for brand ${brand}`);
-    await page.locator("#applyFiltersBtn").click();
     await waitForCardIds(page, expectedIds, "brand filter");
 
-    const applyText = await page.locator("#applyFiltersBtn").innerText();
-    assert.match(applyText, new RegExp(`\\(${expectedIds.length}\\)`), "apply button should show filtered product count after rerender");
+    await page.locator(".filters-selected-top .filter-chip", { hasText: brand }).first().waitFor({ state: "visible" });
     await assertNoUiCrash(page, errors, "brand filter");
+  });
+
+  await t.test("multi-select protocol facet matches any selected value", async () => {
+    await page.goto(`${baseUrl}${categoryHref}`, { waitUntil: "domcontentloaded" });
+    await page.locator(".product-grid .product-card").first().waitFor({ state: "visible" });
+    const protocolCount = await page.locator('[data-filter-key="protocols"]').count();
+    if (protocolCount < 2) return;
+
+    const selectedProtocols = [
+      String(await page.locator('[data-filter-key="protocols"]').nth(0).getAttribute("value") || ""),
+      String(await page.locator('[data-filter-key="protocols"]').nth(1).getAttribute("value") || "")
+    ].filter(Boolean);
+    const selected = new Set(selectedProtocols);
+    const expectedIds = baseIds.filter((id) => protocolValues(byId.get(id)).some((value) => selected.has(value)));
+    assert.ok(expectedIds.length > 0, `expected products for protocols ${selectedProtocols.join(", ")}`);
+
+    await page.locator('[data-filter-key="protocols"]').nth(0).check();
+    await page.locator('[data-filter-key="protocols"]').nth(1).check();
+    await waitForCardIds(page, expectedIds, "multi protocol filter");
+    await assertNoUiCrash(page, errors, "multi protocol filter");
   });
 
   await t.test("price range filters by ruble card price and clear chip restores listing", async () => {
@@ -204,7 +243,6 @@ test("catalog filter matrix matches real product data", async (t) => {
 
     await page.fill("#minPriceFilter", String(min));
     await page.fill("#maxPriceFilter", String(max));
-    await page.locator("#applyFiltersBtn").click();
     await waitForCardIds(page, expectedIds, "price range filter");
 
     await page.locator("[data-chip-clear-all]").click();

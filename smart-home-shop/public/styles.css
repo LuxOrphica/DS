@@ -2340,6 +2340,12 @@ body.mobile-search-open {
   margin-top: 8px;
 }
 
+@media (min-width: 981px) {
+  .filters .apply-filters-btn {
+    display: none;
+  }
+}
+
 .filters-selected {
   display: flex;
   flex-wrap: wrap;
