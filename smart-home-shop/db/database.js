@@ -817,7 +817,15 @@ function initSchema() {
     SELECT
       p.id,
       TRIM(COALESCE(p.category, '')),
-      1,
+      CASE
+        WHEN EXISTS (
+          SELECT 1
+          FROM product_function_categories existing
+          WHERE existing.product_id = p.id
+            AND COALESCE(existing.is_primary, 0) = 1
+        ) THEN 0
+        ELSE 1
+      END,
       0,
       COALESCE(p.updated_at, datetime('now')),
       COALESCE(p.updated_at, datetime('now'))
@@ -1590,7 +1598,9 @@ function listProducts() {
         COALESCE(conflict_note, '') AS conflictNote
       FROM products
       WHERE LOWER(TRIM(COALESCE(entity_type, 'product'))) NOT IN ('service', 'merch')
-        AND TRIM(COALESCE(source_category, '')) <> ''
+        AND COALESCE(NULLIF(TRIM(status), ''), 'active') = 'active'
+        AND COALESCE(is_extra, 0) <> 1
+        AND COALESCE(is_active_normalized, 1) <> 0
         AND LOWER(TRIM(COALESCE(category, ''))) NOT IN ('\u0443\u0441\u043b\u0443\u0433\u0438', '\u043c\u0435\u0440\u0447')
         AND LOWER(TRIM(COALESCE(commercial_group, ''))) NOT IN ('\u0443\u0441\u043b\u0443\u0433\u0438', '\u043c\u0435\u0440\u0447')
       ORDER BY name COLLATE NOCASE ASC
@@ -1605,7 +1615,7 @@ function listProducts() {
     const primary = (fc.find((x) => x.isPrimary)?.category) || row.category || "";
     return {
       ...row,
-      category: primary || row.category || "",
+      category: row.category || "",
       primaryFunctionalCategory: primary || "",
       functionalCategories: categories
     };

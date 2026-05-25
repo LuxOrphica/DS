@@ -258,7 +258,9 @@ async function listProducts() {
         COALESCE(conflict_note,'') AS conflictNote
      FROM products
      WHERE LOWER(TRIM(COALESCE(entity_type,'product'))) NOT IN ('service','merch')
-       AND TRIM(COALESCE(source_category,'')) <> ''
+       AND COALESCE(NULLIF(TRIM(status), ''), 'active') = 'active'
+       AND COALESCE(is_extra, 0) <> 1
+       AND COALESCE(is_active_normalized, 1) <> 0
        AND LOWER(TRIM(COALESCE(category,''))) NOT IN ('услуги','мерч')
        AND LOWER(TRIM(COALESCE(commercial_group,''))) NOT IN ('услуги','мерч')
      ORDER BY name COLLATE NOCASE ASC`
@@ -270,7 +272,7 @@ async function listProducts() {
     const primary = (fc.find(x => x.isPrimary)?.category) || row.category || "";
     return {
       ...row,
-      category: primary || row.category || "",
+      category: row.category || "",
       primaryFunctionalCategory: primary || "",
       functionalCategories: fc.map(x => x.category).filter(Boolean)
     };

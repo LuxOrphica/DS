@@ -132,6 +132,31 @@ function checkUnitScripts(rows) {
   return out;
 }
 
+function checkFunctionalPrimaryCategories(db) {
+  return db
+    .prepare(`
+      SELECT
+        p.id,
+        p.article,
+        p.brand,
+        p.name,
+        p.category,
+        SUM(CASE WHEN COALESCE(pfc.is_primary, 0) = 1 THEN 1 ELSE 0 END) AS primaryCount,
+        GROUP_CONCAT(pfc.category_name || ':' || COALESCE(pfc.is_primary, 0), ' | ') AS links
+      FROM products p
+      LEFT JOIN product_function_categories pfc ON pfc.product_id = p.id
+      WHERE LOWER(TRIM(COALESCE(p.entity_type, 'product'))) NOT IN ('service', 'merch')
+        AND COALESCE(NULLIF(TRIM(p.status), ''), 'active') = 'active'
+        AND COALESCE(p.is_extra, 0) <> 1
+        AND COALESCE(p.is_active_normalized, 1) <> 0
+        AND TRIM(COALESCE(p.category, '')) <> ''
+      GROUP BY p.id
+      HAVING primaryCount <> 1
+      ORDER BY p.category, p.brand, p.article, p.id
+    `)
+    .all();
+}
+
 function hasRevisionMarker(rowLike) {
   const s = [rowLike?.revision, rowLike?.article, rowLike?.name]
     .map((x) => lower(x))
@@ -156,7 +181,7 @@ function main() {
     .prepare(
       `
       SELECT
-        id, article, name, brand, entity_type, revision, is_active_normalized,
+        id, article, name, brand, status, entity_type, revision, is_active_normalized,
         category, group_name,
         image, source_url, description, specs,
         attributes_json, documents_json, gallery_json,
@@ -181,6 +206,11 @@ function main() {
     const sourceUrl = toText(row.source_url);
     const entityType = lower(row.entity_type);
     const isService = entityType === "service" || id.startsWith("service-") || id.startsWith("direction-");
+    const status = lower(row.status || "active");
+    const isActiveStorefrontProduct =
+      !isService &&
+      (status === "" || status === "active") &&
+      Number(row.is_active_normalized || 0) !== 0;
 
     if (!id) {
       addIssue(issues, { severity: "error", code: "missing_id", message: "Empty id" });
@@ -229,7 +259,7 @@ function main() {
 
     const isActiveNormalized = Number(row.is_active_normalized || 0);
 
-    if (!sourceUrl && !isService) {
+    if (!sourceUrl && isActiveStorefrontProduct) {
       addIssue(issues, {
         severity: "warning",
         code: "missing_source_url",
@@ -239,7 +269,7 @@ function main() {
         name,
         message: "source_url is empty"
       });
-    } else if (isUrl(sourceUrl) && !isService) {
+    } else if (isUrl(sourceUrl) && isActiveStorefrontProduct) {
       const host = parseHost(sourceUrl);
       const allowed = allowedHostsByBrand.get(normalizeBrand(brand));
       if (allowed && host && !allowed.has(host)) {
@@ -256,7 +286,7 @@ function main() {
     }
 
     const imgState = imageState(row.image);
-    if (imgState === "missing" && !isService) {
+    if (imgState === "missing" && isActiveStorefrontProduct) {
       addIssue(issues, {
         severity: "warning",
         code: "missing_image",
@@ -360,6 +390,19 @@ function main() {
       severity: "warning",
       code: "mixed_unit_scripts",
       message: `${u.field}: latin=${u.latinCount}, cyrillic=${u.cyrCount}`
+    });
+  }
+
+  const primaryCategoryIssues = checkFunctionalPrimaryCategories(db);
+  for (const row of primaryCategoryIssues) {
+    addIssue(issues, {
+      severity: "error",
+      code: "invalid_functional_primary_category",
+      id: row.id,
+      article: row.article,
+      brand: row.brand,
+      name: row.name,
+      message: `Expected exactly one primary functional category for storefront product; got ${Number(row.primaryCount || 0)}. Product category: ${toText(row.category)}. Links: ${toText(row.links)}`
     });
   }
 

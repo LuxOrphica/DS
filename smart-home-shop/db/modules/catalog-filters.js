@@ -20,6 +20,9 @@ function createCatalogFiltersModule({
       FROM product_function_categories pfc
       JOIN products p ON p.id = pfc.product_id
       WHERE LOWER(TRIM(COALESCE(p.category, ''))) <> LOWER('\u0421\u0453\u0421\u0403\u0420\u00bb\u0421\u0453\u0420\u0456\u0420\u0451')
+        AND COALESCE(NULLIF(TRIM(p.status), ''), 'active') = 'active'
+        AND COALESCE(p.is_extra, 0) <> 1
+        AND COALESCE(p.is_active_normalized, 1) <> 0
         AND LOWER(TRIM(COALESCE(p.category, ''))) NOT IN ('\u0443\u0441\u043b\u0443\u0433\u0438', '\u043c\u0435\u0440\u0447')
         AND LOWER(TRIM(COALESCE(p.commercial_group, ''))) NOT IN ('\u0443\u0441\u043b\u0443\u0433\u0438', '\u043c\u0435\u0440\u0447')
         AND LOWER(TRIM(COALESCE(p.entity_type, 'product'))) NOT IN ('service', 'merch')
@@ -47,6 +50,9 @@ function createCatalogFiltersModule({
       FROM product_function_categories pfc
       JOIN products p ON p.id = pfc.product_id
       WHERE LOWER(TRIM(COALESCE(p.category, ''))) <> LOWER('\u0421\u0453\u0421\u0403\u0420\u00bb\u0421\u0453\u0420\u0456\u0420\u0451')
+        AND COALESCE(NULLIF(TRIM(p.status), ''), 'active') = 'active'
+        AND COALESCE(p.is_extra, 0) <> 1
+        AND COALESCE(p.is_active_normalized, 1) <> 0
         AND LOWER(TRIM(COALESCE(p.category, ''))) NOT IN ('\u0443\u0441\u043b\u0443\u0433\u0438', '\u043c\u0435\u0440\u0447')
         AND LOWER(TRIM(COALESCE(p.commercial_group, ''))) NOT IN ('\u0443\u0441\u043b\u0443\u0433\u0438', '\u043c\u0435\u0440\u0447')
         AND LOWER(TRIM(COALESCE(p.entity_type, 'product'))) NOT IN ('service', 'merch')
