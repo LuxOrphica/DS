@@ -1,0 +1,14 @@
+{
+  "sku": "DW-DALI2",
+  "price": "12 345,67",
+  "gallery": [
+    {
+      "img": "//optim.tildacdn.com/tildabc/photo.png"
+    },
+    {
+      "img": "https://static.tildacdn.com/tildabc/-/resize/200x/-/format/webp/photo-2.png"
+    }
+  ],
+  "descr": "<p>DALI gateway&nbsp;module</p>",
+  "url": "https://larnitech-rus.ru/products/dw-dali2"
+}

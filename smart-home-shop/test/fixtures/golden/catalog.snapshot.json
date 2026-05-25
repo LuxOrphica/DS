@@ -1,0 +1,535 @@
+{
+  "schemaVersion": 1,
+  "generatedFrom": "data/shop.db",
+  "totals": {
+    "products": 643,
+    "activeStorefrontProducts": 608,
+    "brands": 4,
+    "categories": 8
+  },
+  "byBrand": {
+    "Hite Pro": 79,
+    "Larnitech": 71,
+    "Loxone": 345,
+    "Wiren Board": 113
+  },
+  "byCategory": {
+    "Аудио и мультимедиа": 111,
+    "Безопасность и доступ": 58,
+    "Климат": 42,
+    "Комплекты": 13,
+    "Монтаж и расходники": 83,
+    "Освещение": 96,
+    "Управление и автоматизация": 163,
+    "Энергия и учет": 42
+  },
+  "byCategoryBrand": {
+    "Аудио и мультимедиа :: Larnitech": 1,
+    "Аудио и мультимедиа :: Loxone": 110,
+    "Безопасность и доступ :: Hite Pro": 6,
+    "Безопасность и доступ :: Larnitech": 14,
+    "Безопасность и доступ :: Loxone": 28,
+    "Безопасность и доступ :: Wiren Board": 10,
+    "Климат :: Hite Pro": 3,
+    "Климат :: Larnitech": 9,
+    "Климат :: Loxone": 29,
+    "Климат :: Wiren Board": 1,
+    "Комплекты :: Hite Pro": 9,
+    "Комплекты :: Larnitech": 3,
+    "Комплекты :: Wiren Board": 1,
+    "Монтаж и расходники :: Hite Pro": 15,
+    "Монтаж и расходники :: Larnitech": 15,
+    "Монтаж и расходники :: Loxone": 12,
+    "Монтаж и расходники :: Wiren Board": 41,
+    "Освещение :: Hite Pro": 14,
+    "Освещение :: Larnitech": 24,
+    "Освещение :: Loxone": 57,
+    "Освещение :: Wiren Board": 1,
+    "Управление и автоматизация :: Hite Pro": 30,
+    "Управление и автоматизация :: Larnitech": 4,
+    "Управление и автоматизация :: Loxone": 88,
+    "Управление и автоматизация :: Wiren Board": 41,
+    "Энергия и учет :: Hite Pro": 2,
+    "Энергия и учет :: Larnitech": 1,
+    "Энергия и учет :: Loxone": 21,
+    "Энергия и учет :: Wiren Board": 18
+  },
+  "categoryTree": {
+    "Аудио и мультимедиа": {
+      "Акустика": 1,
+      "Аудио": 107,
+      "Multiroom": 3
+    },
+    "Безопасность и доступ": {
+      "Датчики": 32,
+      "Кнопки и брелоки": 2,
+      "Контроль доступа": 20,
+      "Сирены и тревожные устройства": 2,
+      "Wiren Board / Датчики": 2
+    },
+    "Климат": {
+      "Датчики климата": 14,
+      "Контроллеры климата": 3,
+      "Приводы и клапаны": 6,
+      "Термостаты": 9,
+      "Управление кондиционерами": 10
+    },
+    "Комплекты": {
+      "Аксессуары": 2,
+      "Готовые комплекты": 1,
+      "Наборы для освещения": 5,
+      "Наборы управления": 5
+    },
+    "Монтаж и расходники": {
+      "Аксессуары": 1,
+      "Блоки питания": 14,
+      "Кабели и переходники": 9,
+      "Клеммы и коннекторы": 8,
+      "Комплектующие": 1,
+      "Крепеж и монтаж": 7,
+      "Монтажные элементы": 5,
+      "Сетевые модули": 38
+    },
+    "Освещение": {
+      "Выключатели и панели": 34,
+      "Датчики": 4,
+      "Контроллеры освещения": 7,
+      "Реле и диммеры": 22,
+      "Светильники": 22,
+      "Larnitech / Реле и диммеры": 1,
+      "LED-ленты": 6
+    },
+    "Управление и автоматизация": {
+      "Аксессуары": 2,
+      "Комплектующие": 1,
+      "Контроллеры": 2,
+      "Минисерверы и расширения": 48,
+      "Реле и диммеры": 45,
+      "Софт и сервисы": 9,
+      "Управление": 42,
+      "Шторы": 5,
+      "HMI": 4,
+      "Wiren Board / Реле": 2,
+      "Wiren Board / Сетевые карты для холодильников": 3
+    },
+    "Энергия и учет": {
+      "Блоки питания": 1,
+      "Мониторинг энергии": 9,
+      "Реле нагрузки": 10,
+      "Счетчики": 4,
+      "Электросчетчики": 18
+    }
+  },
+  "media": {
+    "withImage": 608,
+    "withoutImage": 0,
+    "withGallery": 606,
+    "withDocuments": 273,
+    "bySourceKind": {
+      "larnitech-rus.ru": 54,
+      "local": 17,
+      "smart-port.ru": 345,
+      "wirenboard.com": 113,
+      "www.hite-pro.ru": 79
+    }
+  },
+  "representatives": {
+    "Hite Pro": [
+      {
+        "id": "00017",
+        "article": "00017",
+        "name": "Кронштейн",
+        "brand": "Hite Pro",
+        "category": "Монтаж и расходники",
+        "group": "Крепеж и монтаж",
+        "price": 480,
+        "currency": "RUB",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 1,
+          "documentsCount": 0,
+          "sourceKind": "www.hite-pro.ru"
+        },
+        "attributes": [
+          "Вес",
+          "Габариты",
+          "Способ монтажа"
+        ]
+      },
+      {
+        "id": "00110",
+        "article": "00110",
+        "name": "Usb-удлинитель 5 метров",
+        "brand": "Hite Pro",
+        "category": "Управление и автоматизация",
+        "group": "Аксессуары",
+        "price": 490,
+        "currency": "RUB",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 1,
+          "documentsCount": 0,
+          "sourceKind": "www.hite-pro.ru"
+        },
+        "attributes": []
+      },
+      {
+        "id": "00398",
+        "article": "00398",
+        "name": "WiFi-антенна c повышенным коэффициентом усиления",
+        "brand": "Hite Pro",
+        "category": "Монтаж и расходники",
+        "group": "Сетевые модули",
+        "price": 600,
+        "currency": "RUB",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 1,
+          "documentsCount": 0,
+          "sourceKind": "www.hite-pro.ru"
+        },
+        "attributes": []
+      },
+      {
+        "id": "00602-1",
+        "article": "00602-1",
+        "name": "Датчик температуры пола Rexant",
+        "brand": "Hite Pro",
+        "category": "Климат",
+        "group": "Датчики климата",
+        "price": 500,
+        "currency": "RUB",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 1,
+          "documentsCount": 0,
+          "sourceKind": "www.hite-pro.ru"
+        },
+        "attributes": [
+          "Вес",
+          "Габариты",
+          "Длина провода",
+          "Питание",
+          "Сопротивление",
+          "Температурный диапазон эксплуатации",
+          "Толщина"
+        ]
+      },
+      {
+        "id": "00728",
+        "article": "00728",
+        "name": "Комплект Умный свет без ремонта",
+        "brand": "Hite Pro",
+        "category": "Комплекты",
+        "group": "Наборы управления",
+        "price": 25400,
+        "currency": "RUB",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 6,
+          "documentsCount": 0,
+          "sourceKind": "www.hite-pro.ru"
+        },
+        "attributes": []
+      }
+    ],
+    "Larnitech": [
+      {
+        "id": "BT-CAN",
+        "article": "BT-CAN",
+        "name": "BT-CAN - Bluetooth CAN адаптер",
+        "brand": "Larnitech",
+        "category": "Монтаж и расходники",
+        "group": "Сетевые модули",
+        "price": 13500,
+        "currency": "RUB",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 2,
+          "documentsCount": 2,
+          "sourceKind": "local"
+        },
+        "attributes": [
+          "версия Bluetooth",
+          "дальность действия",
+          "интерфейсы",
+          "питание",
+          "протокол",
+          "скорость",
+          "совместимость",
+          "Функция"
+        ]
+      },
+      {
+        "id": "BW-010",
+        "article": "BW-010",
+        "name": "BW-010 - Блок расширения",
+        "brand": "Larnitech",
+        "category": "Монтаж и расходники",
+        "group": "Монтажные элементы",
+        "price": 13500,
+        "currency": "RUB",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 1,
+          "documentsCount": 2,
+          "sourceKind": "larnitech-rus.ru"
+        },
+        "attributes": [
+          "Максимальный ток (24V)",
+          "Питание",
+          "Функция"
+        ]
+      },
+      {
+        "id": "BW-AC",
+        "article": "BW-AC",
+        "name": "BW-AC - Адаптер переменного тока",
+        "brand": "Larnitech",
+        "category": "Монтаж и расходники",
+        "group": "Монтажные элементы",
+        "price": 5500,
+        "currency": "RUB",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 1,
+          "documentsCount": 2,
+          "sourceKind": "larnitech-rus.ru"
+        },
+        "attributes": [
+          "Класс защиты",
+          "Тип шины",
+          "Функция"
+        ]
+      },
+      {
+        "id": "BW-BC-PW/LC",
+        "article": "BW-BC-PW/LC",
+        "name": "BW-BC-PW/LC - Блок управления с питанием",
+        "brand": "Larnitech",
+        "category": "Монтаж и расходники",
+        "group": "Монтажные элементы",
+        "price": 10500,
+        "currency": "RUB",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 1,
+          "documentsCount": 2,
+          "sourceKind": "larnitech-rus.ru"
+        },
+        "attributes": [
+          "Функция",
+          "BW-RS232",
+          "BW-RS485",
+          "BW-UART"
+        ]
+      },
+      {
+        "id": "BW-DM",
+        "article": "BW-DM",
+        "name": "BW-DM - Диммер для подрозетной коробки",
+        "brand": "Larnitech",
+        "category": "Освещение",
+        "group": "Реле и диммеры",
+        "price": 8900,
+        "currency": "RUB",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 1,
+          "documentsCount": 2,
+          "sourceKind": "larnitech-rus.ru"
+        },
+        "attributes": [
+          "Входное напряжение 100-250 V",
+          "Максимальный ток (24V)",
+          "Питание",
+          "Функция"
+        ]
+      }
+    ],
+    "Loxone": [
+      {
+        "id": "LX-100011",
+        "article": "100011",
+        "name": "RS485 Расширение",
+        "brand": "Loxone",
+        "category": "Управление и автоматизация",
+        "group": "Минисерверы и расширения",
+        "price": 32982.58,
+        "currency": "EUR",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 9,
+          "documentsCount": 2,
+          "sourceKind": "smart-port.ru"
+        },
+        "attributes": [
+          "Особенности"
+        ]
+      },
+      {
+        "id": "LX-100012",
+        "article": "100012",
+        "name": "DMX Расширение",
+        "brand": "Loxone",
+        "category": "Управление и автоматизация",
+        "group": "Минисерверы и расширения",
+        "price": 52493.21,
+        "currency": "EUR",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 1,
+          "documentsCount": 2,
+          "sourceKind": "smart-port.ru"
+        },
+        "attributes": [
+          "Особенности"
+        ]
+      },
+      {
+        "id": "LX-100013",
+        "article": "100013",
+        "name": "RS232 (Расширение RS232 Extension)",
+        "brand": "Loxone",
+        "category": "Энергия и учет",
+        "group": "Мониторинг энергии",
+        "price": 32982.58,
+        "currency": "EUR",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 1,
+          "documentsCount": 1,
+          "sourceKind": "smart-port.ru"
+        },
+        "attributes": [
+          "Особенности"
+        ]
+      },
+      {
+        "id": "LX-100014",
+        "article": "100014",
+        "name": "1-Wire Расширение",
+        "brand": "Loxone",
+        "category": "Управление и автоматизация",
+        "group": "Минисерверы и расширения",
+        "price": 32982.58,
+        "currency": "EUR",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 1,
+          "documentsCount": 3,
+          "sourceKind": "smart-port.ru"
+        },
+        "attributes": [
+          "Особенности"
+        ]
+      },
+      {
+        "id": "LX-100015",
+        "article": "100015",
+        "name": "EnOcean Расширение",
+        "brand": "Loxone",
+        "category": "Управление и автоматизация",
+        "group": "Минисерверы и расширения",
+        "price": 58349.91,
+        "currency": "EUR",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 1,
+          "documentsCount": 1,
+          "sourceKind": "smart-port.ru"
+        },
+        "attributes": [
+          "Особенности"
+        ]
+      }
+    ],
+    "Wiren Board": [
+      {
+        "id": "WB-05-8",
+        "article": "05-8",
+        "name": "НШвИ",
+        "brand": "Wiren Board",
+        "category": "Монтаж и расходники",
+        "group": "Клеммы и коннекторы",
+        "price": 220,
+        "currency": "RUB",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 2,
+          "documentsCount": 0,
+          "sourceKind": "wirenboard.com"
+        },
+        "attributes": []
+      },
+      {
+        "id": "WB-1WIRE-DS18B20",
+        "article": "1WIRE-DS18B20",
+        "name": "1-wire DS18B20",
+        "brand": "Wiren Board",
+        "category": "Безопасность и доступ",
+        "group": "Датчики",
+        "price": 481,
+        "currency": "RUB",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 2,
+          "documentsCount": 0,
+          "sourceKind": "wirenboard.com"
+        },
+        "attributes": []
+      },
+      {
+        "id": "WB-2-05-8",
+        "article": "2-05-8",
+        "name": "НШвИ2",
+        "brand": "Wiren Board",
+        "category": "Монтаж и расходники",
+        "group": "Клеммы и коннекторы",
+        "price": 420,
+        "currency": "RUB",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 2,
+          "documentsCount": 0,
+          "sourceKind": "wirenboard.com"
+        },
+        "attributes": []
+      },
+      {
+        "id": "WB-4G-VNESNAA-VYNOSNAA",
+        "article": "4G-VNESNAA-VYNOSNAA",
+        "name": "JCG821",
+        "brand": "Wiren Board",
+        "category": "Монтаж и расходники",
+        "group": "Сетевые модули",
+        "price": 640,
+        "currency": "RUB",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 1,
+          "documentsCount": 0,
+          "sourceKind": "wirenboard.com"
+        },
+        "attributes": []
+      },
+      {
+        "id": "WB-BUSHUB",
+        "article": "WB-BUSHUB",
+        "name": "WB-BUSHUB",
+        "brand": "Wiren Board",
+        "category": "Монтаж и расходники",
+        "group": "Сетевые модули",
+        "price": 2000,
+        "currency": "RUB",
+        "media": {
+          "hasImage": true,
+          "galleryCount": 2,
+          "documentsCount": 0,
+          "sourceKind": "wirenboard.com"
+        },
+        "attributes": []
+      }
+    ]
+  }
+}

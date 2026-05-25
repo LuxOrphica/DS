@@ -1,0 +1,22 @@
+{
+  "uid": "816270632231",
+  "sku": "100239",
+  "title": "RGBW 24V Dimmer Tree",
+  "price": "149.90",
+  "url": "/shop/lighting/tproduct/518076158-816270632231-rgbw-24v-dimmer-tree",
+  "img": "/tild3634-6133-4638-b064-633231373464/rgbw-main.jpg",
+  "gallery": [
+    { "img": "/tild3634-6133-4638-b064-633231373464/rgbw-main.jpg" },
+    { "img": "https://static.tildacdn.com/tild3533/rgbw-side.jpg" }
+  ],
+  "editions": [
+    { "img": "/tild3531/rgbw-edition.jpg" }
+  ],
+  "text": "<p>Диммер для RGBW LED-лент.</p><ul><li>4 канала PWM</li><li>Tree interface</li></ul><p><a href=\"/manuals/rgbw.pdf\">Инструкция</a></p>",
+  "descr": "Артикул: 100239",
+  "characteristics": [
+    { "title": "Питание", "value": "24 В DC" },
+    { "title": "Каналы", "value": "4" }
+  ],
+  "partuids": ["518076158"]
+}
