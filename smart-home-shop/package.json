@@ -51,6 +51,7 @@
     "sync:brand-native-to-db": "node scripts/sync_brand_native_categories_to_db.js"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.3",
     "better-sqlite3": "^12.6.2",
     "cheerio": "^1.2.0",
     "cors": "^2.8.6",

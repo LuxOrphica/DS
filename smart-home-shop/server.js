@@ -59,7 +59,9 @@ const {
   createOrder,
   getStats,
   dbPath
-} = require("./db/database");
+} = process.env.TURSO_URL
+  ? require("./db/database-turso")
+  : require("./db/database");
 const { createExchangeRateService } = require("./services/exchange-rate-service");
 const { registerPublicRoutes } = require("./routes/public-routes");
 const { registerAdminRoutes } = require("./routes/admin-routes");
