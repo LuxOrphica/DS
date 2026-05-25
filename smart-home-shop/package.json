@@ -10,6 +10,7 @@
     "lint": "node scripts/lint_syntax.js",
     "test": "node --test",
     "verify": "npm run encoding:check && npm run lint && npm test",
+    "release:gate": "npm run verify && npm run security:audit && npm run audit:catalog",
     "security:audit": "npm audit --omit=dev --audit-level=critical",
     "encoding:check": "node scripts/encoding-hygiene.js",
     "encoding:fix": "node scripts/encoding-hygiene.js --write",
