@@ -1,5 +1,7 @@
 const http = require("http");
 const net = require("net");
+const path = require("path");
+const { spawn } = require("child_process");
 require("dotenv").config({ quiet: true });
 
 const port = Number(process.env.PORT || 3030);
@@ -58,7 +60,7 @@ function isPortInUse() {
 (async () => {
   const healthy = await checkHealth();
   if (healthy) {
-    console.log(`Делаем сети already running on http://localhost:${port}`);
+    console.log(`Smart Home Shop already running on http://localhost:${port}`);
     process.exit(0);
   }
 
@@ -70,5 +72,12 @@ function isPortInUse() {
     process.exit(1);
   }
 
-  require("../server");
+  const child = spawn(process.execPath, [path.join(__dirname, "..", "server.js")], {
+    stdio: "inherit",
+    env: process.env
+  });
+  child.on("exit", (code, signal) => {
+    if (signal) process.kill(process.pid, signal);
+    process.exit(code || 0);
+  });
 })();

@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
       - name: Security audit (critical)
         run: npm run security:audit
 
@@ -30,8 +33,49 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: ESLint
+        run: npm run lint:eslint
+
+      - name: Oxlint
+        run: npm run lint:ox
+
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Tests
         run: npm test
+
+      - name: Test report
+        if: always()
+        run: npm run test:report
+
+      - name: Vitest JUnit report
+        if: always()
+        run: npm run test:unit:report
+
+      - name: Allure results
+        if: always()
+        run: npm run test:unit:allure
+
+      - name: Allure report
+        if: always()
+        run: npm run allure:generate
+
+      - name: Upload JUnit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-test-report
+          path: |
+            reports/test-results.junit.xml
+            reports/vitest.junit.xml
+
+      - name: Upload Allure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: allure-report
 
   smoke-api:
     runs-on: ubuntu-latest
@@ -48,6 +92,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
 
       - name: Start server
         env:

@@ -1,0 +1,17 @@
+# Compressed in-place to about 25 MB; now deployable.
+public/docs/
+
+# Runtime data
+data/
+tmp/
+reports/
+
+# Dev/build tools
+scripts/
+test/
+test-results/
+docs/
+
+# Misc
+*.pdf
+node_modules

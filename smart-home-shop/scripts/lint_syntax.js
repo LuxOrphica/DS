@@ -3,7 +3,7 @@ const path = require("path");
 const { spawnSync } = require("child_process");
 
 const root = process.cwd();
-const targets = ["server.js", "db", "routes", "services", "scripts", "test"];
+const targets = ["server.js", "db", "routes", "services", "scripts", "test", "test-support"];
 const exts = new Set([".js", ".mjs", ".cjs"]);
 const ignoreDirs = new Set(["node_modules", ".git", "tmp", "reports", "coverage", "dist", "build", "archive", "__pycache__"]);
 

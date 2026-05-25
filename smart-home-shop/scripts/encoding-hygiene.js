@@ -2,11 +2,10 @@
 const fs = require("fs");
 const path = require("path");
 const { TextDecoder } = require("util");
-const iconv = require("iconv-lite");
 
 const rootDir = process.cwd();
 const args = new Set(process.argv.slice(2));
-const writeMode = args.has("--write");
+const writeRequested = args.has("--write");
 const includeLegacyData = args.has("--include-legacy-data");
 const reportPath = path.join(rootDir, "reports", "encoding-hygiene-report.json");
 const utf8Decoder = new TextDecoder("utf-8", { fatal: true });
@@ -53,92 +52,37 @@ function walk(baseDir, exts, out = []) {
   return out;
 }
 
-function normalizeKnownArtifacts(text) {
-  return String(text || "")
-    .replace(/\u0432\u201A\u00AC/g, "\u20AC")
-    .replace(/\u0432\u201A\u0455/g, "\u20BD")
-    .replace(/\u0432\u2030\u20AC/g, "\u2248")
-    .replace(/\u0432\u20AC\u201D/g, "\u2014")
-    .replace(/\u0432\u20AC\u201C/g, "\u2013")
-    .replace(/\u0432\u20AC\u00A6/g, "\u2026")
-    .replace(/\u0432\u20AC\u0153/g, "\u201C")
-    .replace(/\u0432\u20AC\u009D/g, "\u201D")
-    .replace(/\u0432\u20AC\u02DC/g, "\u2018")
-    .replace(/\u0432\u20AC\u2122/g, "\u2019");
-}
-
 function stats(text) {
   const value = String(text || "");
   const badMarkers = (value.match(BAD_MARKER_RX) || []).length;
   const mojiPairs = (value.match(MOJI_PAIR_RX) || []).length;
   const mojiRuns = (value.match(MOJI_RUN_RX) || []).length;
   const cyrCount = (value.match(CYR_RX) || []).length;
-  const mojiPairAllowance = Math.floor(cyrCount * 0.08);
-  const mojiOverflow = Math.max(0, mojiPairs - mojiPairAllowance);
-  const score = badMarkers * 15 + mojiRuns * 10 + mojiOverflow * 2;
+  const score = badMarkers * 15 + mojiRuns * 10;
   return { score, badMarkers, mojiPairs, mojiRuns, cyrCount };
 }
 
-function convertCp1251ToUtf8(text) {
-  try {
-    return iconv.decode(iconv.encode(String(text || ""), "win1251"), "utf8");
-  } catch {
-    return String(text || "");
-  }
-}
-
-function hasControlChars(text) {
-  return /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(String(text || ""));
-}
-
-function pickBestText(source) {
-  const normalized = String(source || "").replace(/\r\n/g, "\n").replace(/^\uFEFF/, "");
-  const candidateA = normalizeKnownArtifacts(normalized);
-  const candidateB = normalizeKnownArtifacts(convertCp1251ToUtf8(normalized));
-  const candidateC = normalizeKnownArtifacts(convertCp1251ToUtf8(candidateB));
-  const candidates = Array.from(new Set([normalized, candidateA, candidateB, candidateC])).filter((x) => !hasControlChars(x));
-
-  let best = {
-    text: normalized,
-    ...stats(normalized)
-  };
-
-  for (const candidate of candidates) {
-    const st = stats(candidate);
-    const betterScore = st.score + 2 < best.score;
-    const sameScoreBetterMarkers = st.score === best.score && st.badMarkers < best.badMarkers;
-    const sameMarkersMoreCyr = st.score === best.score && st.badMarkers === best.badMarkers && st.cyrCount > best.cyrCount;
-    if (betterScore || sameScoreBetterMarkers || sameMarkersMoreCyr) {
-      best = { text: candidate, ...st };
+function collectSuspiciousLines(text, limit = 80) {
+  const out = [];
+  const lines = String(text || "").split(/\r?\n/);
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    const kinds = [];
+    if (BAD_MARKER_RX.test(line)) kinds.push("bad-marker");
+    if (MOJI_RUN_RX.test(line)) kinds.push("mojibake-run");
+    BAD_MARKER_RX.lastIndex = 0;
+    MOJI_RUN_RX.lastIndex = 0;
+    MOJI_PAIR_RX.lastIndex = 0;
+    if (kinds.length > 0) {
+      out.push({
+        line: i + 1,
+        kinds,
+        text: line.length > 220 ? `${line.slice(0, 217)}...` : line
+      });
     }
+    if (out.length >= limit) break;
   }
-
-  return {
-    source: normalized,
-    output: best.text,
-    before: stats(normalized),
-    after: {
-      score: best.score,
-      badMarkers: best.badMarkers,
-      mojiPairs: best.mojiPairs,
-      mojiRuns: best.mojiRuns,
-      cyrCount: best.cyrCount
-    }
-  };
-}
-
-function collectChangedLines(beforeText, afterText, limit = 200) {
-  const beforeLines = String(beforeText || "").split("\n");
-  const afterLines = String(afterText || "").split("\n");
-  const max = Math.max(beforeLines.length, afterLines.length);
-  const changed = [];
-  for (let i = 0; i < max; i += 1) {
-    const b = beforeLines[i] || "";
-    const a = afterLines[i] || "";
-    if (b !== a) changed.push({ line: i + 1, before: b, after: a });
-    if (changed.length >= limit) break;
-  }
-  return changed;
+  return out;
 }
 
 function collectTargets() {
@@ -160,9 +104,14 @@ function collectTargets() {
 }
 
 function main() {
+  if (writeRequested) {
+    console.warn("encoding-hygiene: --write is disabled. Fix source text manually and commit valid UTF-8.");
+  }
+
   const files = collectTargets();
   const report = {
-    mode: writeMode ? "write" : "audit",
+    mode: "audit",
+    writeRequested,
     includeLegacyData,
     checkedAt: new Date().toISOString(),
     checkedFiles: files.length,
@@ -179,31 +128,20 @@ function main() {
       decoded = utf8Decoder.decode(raw);
     } catch {
       invalidUtf8 = true;
-      decoded = iconv.decode(raw, "win1251");
+      decoded = raw.toString("utf8");
     }
 
-    const picked = pickBestText(decoded);
-    const changedLines = collectChangedLines(picked.source, picked.output);
-    const changed = picked.output !== picked.source;
-
-    if (writeMode && (hadBom || invalidUtf8 || changed)) {
-      fs.writeFileSync(filePath, picked.output, "utf8");
-    }
-
-    const suspiciousBefore = picked.before.score > 0 || invalidUtf8 || hadBom;
-    const suspiciousAfter = picked.after.score > 0;
-    if (suspiciousBefore || changed || suspiciousAfter) {
+    const currentStats = stats(decoded.replace(/^\uFEFF/, ""));
+    const suspicious = currentStats.score > 0 || invalidUtf8 || hadBom;
+    if (suspicious) {
       const fileRel = rel(filePath);
       report.files.push({
         file: fileRel,
         blocking: !isNonBlockingDataFile(fileRel),
         hadBom,
         invalidUtf8,
-        recodedFromCp1251: invalidUtf8,
-        before: picked.before,
-        after: picked.after,
-        changedCount: changedLines.length,
-        changedLines
+        stats: currentStats,
+        suspiciousLines: collectSuspiciousLines(decoded)
       });
     }
   }
@@ -211,14 +149,14 @@ function main() {
   fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   fs.writeFileSync(reportPath, JSON.stringify(report, null, 2), "utf8");
 
-  const problematic = report.files.filter((f) => f.hadBom || f.invalidUtf8 || f.changedCount > 0 || (f.after?.score || 0) > 0);
+  const problematic = report.files.filter((f) => f.hadBom || f.invalidUtf8 || (f.stats?.score || 0) > 0);
   const blocking = problematic.filter((f) => f.blocking !== false);
   console.log(`Checked: ${report.checkedFiles} files`);
   console.log(`Problematic: ${problematic.length} files`);
   console.log(`Blocking: ${blocking.length} files`);
   console.log(`Report: ${rel(reportPath)}`);
 
-  if (!writeMode && blocking.length > 0) process.exit(1);
+  if (blocking.length > 0) process.exit(1);
 }
 
 main();

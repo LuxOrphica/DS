@@ -74,8 +74,10 @@ const { createRequestContextMiddleware } = require("./middleware/request-context
 const { parseAllowedOrigins, createCorsOptions } = require("./middleware/cors-policy");
 const { createApiRateLimitMiddleware } = require("./middleware/api-rate-limit");
 const { createHelmetMiddleware } = require("./middleware/security-headers");
+const { initSentry } = require("./services/sentry-service");
 
 const app = express();
+const sentry = initSentry();
 const port = Number(process.env.PORT || 3030);
 const EUR_RUB_REFRESH_MS = 24 * 60 * 60 * 1000;
 const disableAdminAuth = String(process.env.DISABLE_ADMIN_AUTH || "").trim() === "1";
@@ -121,8 +123,8 @@ app.use(
         res.setHeader("Pragma", "no-cache");
         res.setHeader("Expires", "0");
       } else if (ext === ".js" || ext === ".mjs" || ext === ".css") {
-        // Short cache for app shell assets: better perf, still quick rollout of UI fixes.
-        res.setHeader("Cache-Control", "public, max-age=600");
+        // This project is still changing quickly; avoid stale frontend assets while hardening the shop.
+        res.setHeader("Cache-Control", "no-cache, must-revalidate");
       } else if (
         ext === ".png" || ext === ".jpg" || ext === ".jpeg" || ext === ".gif" ||
         ext === ".webp" || ext === ".avif" || ext === ".svg" || ext === ".ico" ||
@@ -156,6 +158,7 @@ app.use(createApiRateLimitMiddleware({
   windowMs: Math.max(5_000, Number(process.env.API_RATE_LIMIT_WINDOW_MS || 60_000)),
   maxRequests: Math.max(20, Number(process.env.API_RATE_LIMIT_MAX || 240))
 }));
+
 registerPublicRoutes(app, {
   dbPath,
   getStats,
@@ -243,6 +246,7 @@ app.use((err, req, res, next) => {
   if (err.type === "entity.too.large") {
     return res.status(413).json({ ok: false, error: "Payload too large" });
   }
+  sentry.captureException(err, req);
   console.error(`[${req.requestId || "-"}]`, err);
   const status = Number(err.statusCode || err.status || 500);
   const safeStatus = status >= 400 && status < 600 ? status : 500;
@@ -266,6 +270,9 @@ if (require.main === module) {
     }
     if (cspReportOnly) {
       console.warn("CSP is running in report-only mode (CSP_REPORT_ONLY=1)");
+    }
+    if (sentry.enabled) {
+      console.log("Sentry error reporting enabled.");
     }
 
     exchangeRateService.refreshEurRubRate().then((result) => {
