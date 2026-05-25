@@ -13,11 +13,8 @@ const https = require("https");
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-const crypto = require("crypto");
-const cheerio = require("cheerio");
 const {
-  initSchema,
-  replaceAllProducts
+  initSchema
 } = require("../db/database");
 
 const TIMEOUT = 30000;
@@ -64,7 +61,7 @@ function fetch(url, timeout = TIMEOUT) {
   });
 }
 
-function downloadImage(url, filename) {
+function _downloadImage(url, filename) {
   return new Promise((resolve, reject) => {
     if (!url || (!url.startsWith("http://") && !url.startsWith("https://"))) {
       reject(new Error("Invalid URL"));
@@ -120,11 +117,11 @@ function downloadImage(url, filename) {
   });
 }
 
-function cleanText(text) {
+function _cleanText(text) {
   return text.trim().replace(/\s+/g, " ").substring(0, 1000);
 }
 
-function extractPrice(text) {
+function _extractPrice(text) {
   const match = text.match(/(\d+\s*)*\d+/);
   return match ? parseInt(match[0].replace(/\s/g, "")) : 0;
 }
@@ -145,7 +142,6 @@ async function parseHiteProWithImages() {
     const html = await fetch(catalogUrl, TIMEOUT);
     console.log(`✅ Загружено ${html.length} символов\n`);
     
-    const $ = cheerio.load(html);
     
     // Предзаполненные товары с описаниями и характеристиками
     const hitoproProducts = [
@@ -272,7 +268,7 @@ async function parseHiteProWithImages() {
       // Пытаемся скачать изображение
       if (productData.image && productData.image.startsWith("https")) {
         try {
-          const filename = getImageFilename(productData.id, 0);
+          getImageFilename(productData.id, 0);
           // Note: placeholder.com может не позволить скачивание
           // В реальной ситуации используем прямые URL с сайта
           console.log(`     🖼️  Изображение: ${productData.image}`);

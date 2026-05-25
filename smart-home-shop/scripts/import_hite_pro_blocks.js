@@ -17,11 +17,9 @@
 const https = require("https");
 const http = require("http");
 const path = require("path");
-const fs = require("fs");
 const cheerio = require("cheerio");
 const {
-  initSchema,
-  replaceAllProducts
+  initSchema
 } = require("../db/database");
 
 const TIMEOUT = 30000;
@@ -115,14 +113,12 @@ async function parseHiteProBlocks() {
     ];
     
     let $items = null;
-    let selectorUsed = null;
     
     for (const sel of selectors) {
       const items = $(sel);
       if (items.length > 3) {  // Минимум 3 товара
         console.log(`   ✓ Найден селектор: "${sel}" (${items.length} товаров)`);
         $items = items;
-        selectorUsed = sel;
         break;
       }
     }

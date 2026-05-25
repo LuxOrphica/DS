@@ -53,10 +53,6 @@ function buildSearchTerms(product) {
   return out.slice(0, 5);
 }
 
-function escapeRegExp(value) {
-  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 function extByUrl(url) {
   try {
     const ext = path.extname(new URL(url).pathname || "").toLowerCase();

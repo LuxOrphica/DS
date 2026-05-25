@@ -66,10 +66,6 @@ function parseSpecs(specs) {
   return out;
 }
 
-function isEmptyValue(value) {
-  return String(value || "").trim() === "";
-}
-
 function shouldWriteField(currentValue, nextValue) {
   const current = String(currentValue || "").trim();
   const next = String(nextValue || "").trim();

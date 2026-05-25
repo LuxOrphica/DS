@@ -138,7 +138,7 @@ async function parseProduct(url, categoryTitle) {
         await downloadImage(imgUrl, out);
         localImages.push(`/images/products/${fname}`);
         await new Promise(r=>setTimeout(r,200));
-      } catch (e) {
+      } catch (_e) {
       }
     }
     return {

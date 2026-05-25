@@ -2,7 +2,7 @@ const https = require("https");
 const path = require("path");
 const Database = require("better-sqlite3");
 
-const ROOT = path.resolve(__dirname, "..");
+const ROOT = path.resolve(__dirname, "..", "..");
 const DB_PATH = path.join(ROOT, "data", "shop.db");
 const SITE_URL = "https://larnitech-rus.ru/";
 const SITEMAP_URL = "https://larnitech-rus.ru/sitemap.xml";
@@ -169,9 +169,9 @@ function findWikiLink(html, baseUrl) {
   if (candidates.length) return candidates[0];
 
   // Some links are present escaped in inline scripts.
-  const scriptMatches = [...String(html || "").matchAll(/https?:\\\/\\\/[^"'\\\s]*wiki[^"'\\\s]*/gi)].map((m) =>
-    m[0].replace(/\\\//g, "/")
-  );
+  const scriptMatches = [...String(html || "").matchAll(/https?:\\\/\\\/[^"'\s]+/gi)]
+    .map((m) => m[0].replace(/\\\//g, "/"))
+    .filter((x) => /wiki\.|\/wiki/i.test(x));
   return scriptMatches.length ? scriptMatches[0] : "";
 }
 
@@ -346,7 +346,25 @@ async function run() {
   );
 }
 
-run().catch((e) => {
-  console.error(e && e.stack ? e.stack : e);
-  process.exit(1);
-});
+if (require.main === module) {
+  run().catch((e) => {
+    console.error(e && e.stack ? e.stack : e);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  SITE_URL,
+  SITEMAP_URL,
+  norm,
+  stripHtml,
+  parsePrice,
+  parseGallery,
+  normalizeImageUrl,
+  extractStorepartsFromHtml,
+  parseSitemapUrls,
+  absoluteUrl,
+  findWikiLink,
+  skuCandidates,
+  chooseMatch
+};

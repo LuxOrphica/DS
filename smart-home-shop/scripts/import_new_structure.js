@@ -9,8 +9,6 @@
 
 const https = require("https");
 const http = require("http");
-const path = require("path");
-const fs = require("fs");
 const cheerio = require("cheerio");
 const {
   initSchema,
@@ -18,8 +16,6 @@ const {
 } = require("../db/database");
 
 const TIMEOUT = 15000;
-const CHUNK_SIZE = 300;
-
 initSchema();
 
 // ==================== HELPERS ====================

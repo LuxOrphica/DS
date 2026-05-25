@@ -7,6 +7,7 @@ const http = require("http");
 const https = require("https");
 const cheerio = require("cheerio");
 const Database = require("better-sqlite3");
+const { createLogger } = require("./lib/logger");
 
 const ROOT = path.resolve(__dirname, "..");
 const DB_PATH = path.join(ROOT, "data", "shop.db");
@@ -16,6 +17,7 @@ const BASE = "https://www.hite-pro.ru";
 const START = `${BASE}/shop/c`;
 const CATEGORY_PREFIX = "/shop/c";
 const BRAND = "Hite Pro";
+const logger = createLogger("catalog-sync", { source: "hite-shop-live", brand: BRAND });
 
 const TIMEOUT = 30000;
 const DELAY_MS = 140;
@@ -268,6 +270,7 @@ async function fetchProductDetails(productUrl, fallback) {
       descriptionHtml,
       specs,
       attributes,
+      image,
       gallery
     };
   } catch (e) {
@@ -438,8 +441,11 @@ function writeReport(report) {
 
 async function main() {
   const started = Date.now();
+  logger.info({ event: "catalog_sync_started", startUrl: START }, "catalog sync started");
   const { products, debug } = await buildHiteProducts();
+  logger.info({ event: "catalog_sync_parsed", parsedProducts: products.length }, "catalog sync parsed products");
   const count = upsertHiteProducts(products);
+  logger.info({ event: "catalog_sync_db_upserted", parsedProducts: products.length, dbBrandProducts: count }, "catalog sync wrote database");
 
   const report = {
     ok: true,
@@ -456,32 +462,39 @@ async function main() {
   };
 
   const reportPath = writeReport(report);
-  console.log(
-    JSON.stringify(
-      {
-        ok: true,
-        parsedProducts: report.parsedProducts,
-        dbBrandProducts: report.dbBrandProducts,
-        productsWithImage: report.productsWithImage,
-        productsWithoutImage: report.productsWithoutImage,
-        reportFile: reportPath
-      },
-      null,
-      2
-    )
+  logger.info(
+    {
+      event: "catalog_sync_finished",
+      ok: true,
+      parsedProducts: report.parsedProducts,
+      dbBrandProducts: report.dbBrandProducts,
+      productsWithImage: report.productsWithImage,
+      productsWithoutImage: report.productsWithoutImage,
+      reportFile: reportPath
+    },
+    "catalog sync finished"
   );
 }
 
-main().catch((e) => {
-  console.error(
-    JSON.stringify(
-      {
-        ok: false,
-        error: e.message
-      },
-      null,
-      2
-    )
-  );
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((e) => {
+    logger.error({ event: "catalog_sync_failed", ok: false, error: e.message, stack: e.stack }, "catalog sync failed");
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  BRAND,
+  BASE,
+  toText,
+  toAbsUrl,
+  stripHtml,
+  parsePrice,
+  slugToArticle,
+  makeId,
+  inferCategory,
+  categoryDepth,
+  extractCardsFromCategoryPage,
+  extractSpecsFromProductPage,
+  extractGalleryFromProductPage
+};
