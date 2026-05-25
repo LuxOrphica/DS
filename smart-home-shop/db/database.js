@@ -2074,6 +2074,7 @@ function updateAdminProduct(id, patch) {
   return changes;
 }
 
+// eslint-disable-next-line no-unused-vars
 function listAdminOrders({
   limit = 200,
   offset = 0,
@@ -2235,6 +2236,7 @@ function getAdminOrderById(orderId) {
   };
 }
 
+// eslint-disable-next-line no-unused-vars
 function updateAdminOrder(orderId, patch = {}) {
   const id = String(orderId || "").trim();
   if (!id) return 0;
@@ -2290,6 +2292,7 @@ function updateAdminOrder(orderId, patch = {}) {
   return changes;
 }
 
+// eslint-disable-next-line no-unused-vars
 function listPublicOrdersByLookup({ query = "", limit = 20 } = {}) {
   const raw = String(query || "").trim();
   if (raw.length < 4) return { rows: [], total: 0 };
@@ -2339,6 +2342,7 @@ function listPublicOrdersByLookup({ query = "", limit = 20 } = {}) {
   return { rows, total: rows.length };
 }
 
+// eslint-disable-next-line no-unused-vars
 function listAdminAuditLog({ limit = 200, offset = 0, entityType = "", action = "" } = {}) {
   const where = [];
   const params = {
@@ -2393,6 +2397,7 @@ function listAdminAuditLog({ limit = 200, offset = 0, entityType = "", action = 
   return { rows, total };
 }
 
+// eslint-disable-next-line no-unused-vars
 function listAdminFilters() {
   const rows = listProducts().filter((row) => !isServiceLikeRow(row));
   const brandMap = new Map();
@@ -2431,6 +2436,7 @@ function listAdminFilters() {
   };
 }
 
+// eslint-disable-next-line no-unused-vars
 function listAdminProductsAdvanced(filters = {}) {
   const limit = Math.min(500, Math.max(1, Number(filters.limit || 50)));
   const offset = Math.max(0, Number(filters.offset || 0));
@@ -3032,7 +3038,7 @@ function applyBulkAdminProducts({ action, productIds, data = {} }) {
             productId: row.id,
             hasCover: coverState.hasCover
           });
-        } catch (error) {
+        } catch (_error) {
           failed.push(row.id);
         }
       }
@@ -3481,6 +3487,7 @@ function saveTabBlocksAdmin(tabId, blocks = []) {
     });
 }
 
+// eslint-disable-next-line no-unused-vars
 function createOrder(payload) {
   const orderId = `ORD-${Date.now()}`;
   const now = new Date().toISOString();
