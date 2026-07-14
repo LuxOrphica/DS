@@ -142,8 +142,7 @@
         "brand": "Hite Pro",
         "category": "Монтаж и расходники",
         "group": "Крепеж и монтаж",
-        "price": 480,
-        "currency": "RUB",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 1,
@@ -163,8 +162,7 @@
         "brand": "Hite Pro",
         "category": "Управление и автоматизация",
         "group": "Аксессуары",
-        "price": 490,
-        "currency": "RUB",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 1,
@@ -180,8 +178,7 @@
         "brand": "Hite Pro",
         "category": "Монтаж и расходники",
         "group": "Сетевые модули",
-        "price": 600,
-        "currency": "RUB",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 1,
@@ -197,8 +194,7 @@
         "brand": "Hite Pro",
         "category": "Климат",
         "group": "Датчики климата",
-        "price": 500,
-        "currency": "RUB",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 1,
@@ -222,8 +218,7 @@
         "brand": "Hite Pro",
         "category": "Комплекты",
         "group": "Наборы управления",
-        "price": 25400,
-        "currency": "RUB",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 6,
@@ -241,8 +236,7 @@
         "brand": "Larnitech",
         "category": "Монтаж и расходники",
         "group": "Сетевые модули",
-        "price": 13500,
-        "currency": "RUB",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 2,
@@ -267,8 +261,7 @@
         "brand": "Larnitech",
         "category": "Монтаж и расходники",
         "group": "Монтажные элементы",
-        "price": 13500,
-        "currency": "RUB",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 1,
@@ -288,8 +281,7 @@
         "brand": "Larnitech",
         "category": "Монтаж и расходники",
         "group": "Монтажные элементы",
-        "price": 5500,
-        "currency": "RUB",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 1,
@@ -309,8 +301,7 @@
         "brand": "Larnitech",
         "category": "Монтаж и расходники",
         "group": "Монтажные элементы",
-        "price": 10500,
-        "currency": "RUB",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 1,
@@ -331,8 +322,7 @@
         "brand": "Larnitech",
         "category": "Освещение",
         "group": "Реле и диммеры",
-        "price": 8900,
-        "currency": "RUB",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 1,
@@ -355,8 +345,7 @@
         "brand": "Loxone",
         "category": "Управление и автоматизация",
         "group": "Минисерверы и расширения",
-        "price": 34170.11,
-        "currency": "EUR",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 9,
@@ -374,8 +363,7 @@
         "brand": "Loxone",
         "category": "Управление и автоматизация",
         "group": "Минисерверы и расширения",
-        "price": 54383.23,
-        "currency": "EUR",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 1,
@@ -393,8 +381,7 @@
         "brand": "Loxone",
         "category": "Энергия и учет",
         "group": "Мониторинг энергии",
-        "price": 34170.11,
-        "currency": "EUR",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 1,
@@ -412,8 +399,7 @@
         "brand": "Loxone",
         "category": "Управление и автоматизация",
         "group": "Минисерверы и расширения",
-        "price": 34170.11,
-        "currency": "EUR",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 1,
@@ -431,8 +417,7 @@
         "brand": "Loxone",
         "category": "Управление и автоматизация",
         "group": "Минисерверы и расширения",
-        "price": 60450.8,
-        "currency": "EUR",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 1,
@@ -452,8 +437,7 @@
         "brand": "Wiren Board",
         "category": "Монтаж и расходники",
         "group": "Клеммы и коннекторы",
-        "price": 220,
-        "currency": "RUB",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 2,
@@ -469,8 +453,7 @@
         "brand": "Wiren Board",
         "category": "Безопасность и доступ",
         "group": "Датчики",
-        "price": 481,
-        "currency": "RUB",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 2,
@@ -486,8 +469,7 @@
         "brand": "Wiren Board",
         "category": "Монтаж и расходники",
         "group": "Клеммы и коннекторы",
-        "price": 420,
-        "currency": "RUB",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 2,
@@ -503,8 +485,7 @@
         "brand": "Wiren Board",
         "category": "Монтаж и расходники",
         "group": "Сетевые модули",
-        "price": 640,
-        "currency": "RUB",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 1,
@@ -520,8 +501,7 @@
         "brand": "Wiren Board",
         "category": "Монтаж и расходники",
         "group": "Сетевые модули",
-        "price": 2000,
-        "currency": "RUB",
+        "hasPrice": true,
         "media": {
           "hasImage": true,
           "galleryCount": 2,

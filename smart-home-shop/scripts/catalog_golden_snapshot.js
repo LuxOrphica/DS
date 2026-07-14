@@ -120,8 +120,10 @@ function productSnapshot(row) {
     brand: displayText(row.brand),
     category: displayText(row.category),
     group: displayText(row.group_name),
-    price: Number(row.price_rub || row.price || 0) || 0,
-    currency: text(row.price_currency || "RUB") || "RUB",
+    // Точную цену намеренно не фиксируем: price_rub пересчитывается по курсу
+    // EUR→RUB при старте и дрейфует. Golden отслеживает структуру каталога,
+    // а не волатильную цену. Флаг сохраняет сигнал «у товара пропала цена».
+    hasPrice: Number(row.price_rub || row.price || 0) > 0,
     media: mediaState(row),
     attributes: attrKeys(row)
   };

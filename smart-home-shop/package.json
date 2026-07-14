@@ -49,6 +49,7 @@
     "audit:catalog": "node scripts/audit_catalog_integrity.js",
     "snapshot:catalog": "node scripts/catalog_golden_snapshot.js",
     "snapshot:catalog:update": "node scripts/catalog_golden_snapshot.js --update",
+    "assets:og": "node scripts/generate_og_image.js",
     "test:golden": "node --test test/catalog-golden.test.js",
     "audit:all": "npm run audit:catalog && npm run audit:quality && npm run security:audit",
     "clean:data": "node scripts/clean_data.js",
