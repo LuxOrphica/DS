@@ -2,7 +2,8 @@
 
 **Дата:** 2026-07-14  
 **Проект:** delaemseti.shop (Делаем сети)  
-**Статус:** Метатеги отсутствуют, нужна полная реализация
+**Статус:** Метатеги отсутствуют, нужна полная реализация  
+**Цель:** метатеги по текущему рынку и лучшим практикам, генерируемые автоматически из БД (ручное вмешательство — только опционально для top-товаров)
 
 ---
 
@@ -187,14 +188,23 @@
   "@type": "Product",
   "name": "Выключатель Loxone 10A 220V",
   "description": "Умный выключатель для управления освещением и электроприборами",
+  "sku": "LOX-SW-10A",
   "brand": { "@type": "Brand", "name": "Loxone" },
-  "image": "https://delaemseti.shop/products/loxone-switch.jpg",
-  "price": "2490",
-  "priceCurrency": "RUB",
-  "availability": "https://schema.org/InStock",
-  "url": "https://delaemseti.shop/product/loxone-switch-10a"
+  "image": ["https://delaemseti.shop/products/loxone-switch.jpg"],
+  "offers": {
+    "@type": "Offer",
+    "url": "https://delaemseti.shop/product/loxone-switch-10a",
+    "price": "2490",
+    "priceCurrency": "RUB",
+    "availability": "https://schema.org/InStock",
+    "priceValidUntil": "2026-12-31"
+  }
 }
 </script>
+<!-- Best practice: цена в offers (Offer), не плоско на Product.
+     Так требует Google Merchant / Rich Results. -->
+<!-- sku, availability, priceValidUntil — берутся из БД динамически. -->
+<!-- Если появятся отзывы — добавить aggregateRating для звёзд в выдаче. -->
 
 <link rel="canonical" href="https://delaemseti.shop/product/loxone-switch-10a">
 ```
@@ -389,22 +399,22 @@ delaemseti.shop › product › loxone-switch-10a
 1. **Метатегов нет** — критичная проблема для соцсетей (товары не шарятся)
 2. **Стратегия:** B2C фокус на "удобство" + "выбирай между брендами" (не на конкуренцию с производителями)
 3. **Ключевые слова:** "умный дом купить", "оборудование для автоматизации", категории (не названия брендов)
-4. **Реализация:** Вариант B (auto-generate + manual override) — лучше баланс
-5. **Важно:** Schema.org обязателен для Google Rich Results
+4. **Главное — автоматизация:** метатеги генерируются из БД на каждый запрос, цена всегда свежая, ручной труд не нужен. Override в админке — опционально, только для top-товаров.
+5. **Best practices:** Schema.org с ценой в `offers` (Google Merchant), OG-картинка 1200×630, Title ≤60 симв., Description 150–160 симв.
 
 ---
 
 **Рекомендуемый путь:**
 
 ```
-Сначала (параллельно с VPS):
-✅ Auto-generate метатегов (главная, товары, категории)
+Сначала (ядро — полностью автоматизировано):
+✅ Auto-generate метатегов из БД (главная, товары, категории, бренды)
 ✅ Schema.org JSON-LD для товаров
 ✅ Проверка в Google Search Console и Facebook Debugger
 
 Опционально следом:
-✅ Admin UI для SEO редактирования
-✅ Ручное заполнение top 50-100 товаров (если владелец согласен)
+✅ Admin UI для ручного override метатегов
+✅ Заполнение top 50-100 товаров вручную (если владелец согласен)
 ```
 
 ---
