@@ -1214,6 +1214,32 @@
   color: var(--admin-gray);
 }
 
+.seo-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.seo-counter {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--admin-gray);
+  font-variant-numeric: tabular-nums;
+}
+
+.seo-counter.seo-counter-over {
+  color: #dc2626;
+}
+
+.seo-auto-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--admin-gray);
+  word-break: break-word;
+}
+
 .admin-media-preview-cell {
   width: 88px;
   height: 88px;

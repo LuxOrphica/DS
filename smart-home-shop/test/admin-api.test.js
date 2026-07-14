@@ -135,16 +135,14 @@ test("admin products filter labels keep readable text (no question-mark placehol
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "admin-new.html"), "utf8");
   assert.match(html, /id="variantConflictFilter"/);
   assert.doesNotMatch(html, /<option value="">\?\?\? \?\?\?\?\?\?><\/option>/);
-  assert.match(html, /value="var_1"/);
-  assert.match(html, /value="var_0"/);
-  assert.match(html, /value="hv_1"/);
-  assert.match(html, /value="hv_0"/);
-  assert.match(html, /value="extra_1"/);
-  assert.match(html, /value="extra_0"/);
+  // Photo/document filters stay; variant/Extra service filters were removed as unused.
   assert.match(html, /value="ph_1"/);
   assert.match(html, /value="ph_0"/);
   assert.match(html, /value="docs_1"/);
   assert.match(html, /value="docs_0"/);
+  assert.doesNotMatch(html, /value="var_1"/);
+  assert.doesNotMatch(html, /value="hv_1"/);
+  assert.doesNotMatch(html, /value="extra_1"/);
   assert.doesNotMatch(html, /РўРѕР»СЊРєРѕ Extra/);
   assert.doesNotMatch(html, /id="hasVariantsFilter"/);
   assert.doesNotMatch(html, /id="hasPhotosFilter"/);

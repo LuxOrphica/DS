@@ -129,9 +129,6 @@
           <select id="brandFilter" class="select search-strip-input">
             <option value="">Все бренды</option>
           </select>
-          <select id="categoryTreeFilter" class="select search-strip-input" style="display:none;">
-            <option value="">Категория / подкатегория</option>
-          </select>
           <select id="categoryFilter" class="select search-strip-input">
             <option value="">Все функциональные категории</option>
           </select>
@@ -139,13 +136,7 @@
             <option value="">Сначала выберите бренд</option>
           </select>
           <select id="variantConflictFilter" class="select search-strip-input">
-            <option value="">Служебные фильтры: все</option>
-            <option value="var_1">Конфликт вариантов</option>
-            <option value="var_0">Без конфликта вариантов</option>
-            <option value="hv_1">С вариантами</option>
-            <option value="hv_0">Без вариантов</option>
-            <option value="extra_1">Только доп. импорт (Extra)</option>
-            <option value="extra_0">Без доп. импорта (Extra)</option>
+            <option value="">Фото и документы: все</option>
             <option value="ph_1">Фото: есть</option>
             <option value="ph_0">Фото: нет</option>
             <option value="docs_1">Документы: есть</option>
@@ -163,10 +154,6 @@
               <span id="tableInfo">Загрузка...</span>
             </div>
             <div class="table-options">
-              <label class="checkbox">
-                <input type="checkbox" id="showVariants" />
-                <span>Показывать варианты</span>
-              </label>
               <select class="select-per-page">
                 <option value="50">50</option>
                 <option value="100">100</option>
@@ -446,7 +433,6 @@
         <div class="product-editor">
           <div class="editor-tabs">
             <button class="editor-tab active" data-tab="basic">Основное</button>
-            <button class="editor-tab" data-tab="variants">Варианты</button>
             <button class="editor-tab" data-tab="content">Контент</button>
             <button class="editor-tab" data-tab="specs">Характеристики</button>
             <button class="editor-tab" data-tab="photos">Фото</button>
@@ -563,36 +549,6 @@
               </div>
             </div>
 
-            <div class="editor-pane" id="variantsPane">
-              <div class="variants-toolbar">
-                <div class="variants-meta">
-                  <strong>Варианты товара</strong>
-                  <span id="variantsCount">0 шт.</span>
-                </div>
-                <button id="addVariantRowBtn" class="btn btn-primary" type="button">+ Добавить вариант</button>
-              </div>
-
-              <div class="editor-help-text">Нажмите «+ Фото», вставьте URL изображения и сразу увидите превью в строке.</div>
-              <div class="variants-table-wrapper">
-                <table class="variants-table">
-                  <thead>
-                    <tr>
-                      <th>SKU *</th>
-                      <th>Опции</th>
-                      <th>Цена, руб</th>
-                      <th>Остаток</th>
-                      <th>Статус</th>
-                      <th>Действия</th>
-                    </tr>
-                  </thead>
-                  <tbody id="variantsTableBody">
-                    <tr>
-                      <td colspan="6" class="variants-empty">Вариантов пока нет</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
 
             <div class="editor-pane" id="contentPane">
               <div class="content-layout">
@@ -721,18 +677,30 @@
             </div>
 
             <div class="editor-pane" id="seoPane">
+              <div class="editor-help-text">
+                Оставьте поля пустыми — метатеги сгенерируются автоматически из названия,
+                цены и описания. Заполняйте вручную только там, где нужен особый текст.
+              </div>
               <div class="form-grid">
                 <div class="form-group full-width">
-                  <label>Slug</label>
-                  <input id="productSlug" class="input" type="text" placeholder="smart-home-controller-x1" />
+                  <label>Slug (адрес страницы)</label>
+                  <input id="productSlug" class="input" type="text" placeholder="умный-выключатель-loxone" />
                 </div>
                 <div class="form-group full-width">
-                  <label>Meta Title</label>
-                  <input id="productMetaTitle" class="input" type="text" placeholder="Smart Home Controller X1" />
+                  <label class="seo-label">
+                    <span>Meta Title</span>
+                    <span id="metaTitleCounter" class="seo-counter">0/60</span>
+                  </label>
+                  <input id="productMetaTitle" class="input" type="text" placeholder="Оставьте пусто для авто-генерации" />
+                  <div id="metaTitleAuto" class="seo-auto-hint"></div>
                 </div>
                 <div class="form-group full-width">
-                  <label>Meta Description</label>
-                  <textarea id="productMetaDescription" class="textarea" rows="4" placeholder="Short SEO description"></textarea>
+                  <label class="seo-label">
+                    <span>Meta Description</span>
+                    <span id="metaDescCounter" class="seo-counter">0/160</span>
+                  </label>
+                  <textarea id="productMetaDescription" class="textarea" rows="4" placeholder="Оставьте пусто для авто-генерации"></textarea>
+                  <div id="metaDescAuto" class="seo-auto-hint"></div>
                 </div>
               </div>
             </div>

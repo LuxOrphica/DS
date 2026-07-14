@@ -305,7 +305,10 @@ class AdminApp {
       const el = document.getElementById(id);
       if (!el) return;
       const eventName = el.tagName === 'SELECT' ? 'change' : 'input';
-      el.addEventListener(eventName, () => this.renderProductOverview());
+      el.addEventListener(eventName, () => {
+        this.renderProductOverview();
+        this.updateSeoPreview();
+      });
     });
     const productBrand = document.getElementById('productBrand');
     if (productBrand) {
@@ -3309,9 +3312,64 @@ class AdminApp {
     document.getElementById('productSlug').value = product.slug || '';
     document.getElementById('productMetaTitle').value = product.metaTitle || '';
     document.getElementById('productMetaDescription').value = product.metaDescription || '';
+    this._seoPriceRub = Number(product.priceRub || 0);
     this.renderProductAttributeEditor();
     this.refreshQualityIndicator();
     this.renderProductOverview();
+    this.updateSeoPreview();
+  }
+
+  // Превью авто-генерируемых метатегов (зеркалит серверный генератор
+  // services/meta-tags.js). Цена берётся в рублях из price_rub, как на витрине.
+  buildAutoSeo() {
+    const SITE = 'Делаем сети';
+    const TITLE_MAX = 60;
+    const DESC_MAX = 160;
+    const strip = (s) => String(s == null ? '' : s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const truncate = (s, max) => {
+      const t = strip(s);
+      if (t.length <= max) return t;
+      const cut = t.slice(0, max - 1);
+      const sp = cut.lastIndexOf(' ');
+      const base = sp > max * 0.6 ? cut.slice(0, sp) : cut;
+      return base.replace(/[\s.,;:!-]+$/, '') + '…';
+    };
+    const name = String(document.getElementById('productName')?.value || '').trim();
+    const descRaw = String(document.getElementById('productDescription')?.value || '').trim();
+    const priceRub = Number(this._seoPriceRub || 0);
+    const priceText = priceRub > 0 ? `${Math.round(priceRub).toLocaleString('ru-RU')} ₽` : '';
+
+    const autoTitle = truncate(
+      priceText ? `${name} — ${priceText} | ${SITE}` : `${name} | ${SITE}`,
+      TITLE_MAX
+    );
+    const priceSuffix = priceText ? ` Цена ${priceText}. Доставка по России.` : ' Доставка по России.';
+    const baseDesc = strip(descRaw) || `${name} для умного дома.`;
+    const autoDesc = truncate(truncate(baseDesc, DESC_MAX - priceSuffix.length) + priceSuffix, DESC_MAX);
+    return { autoTitle, autoDesc };
+  }
+
+  updateSeoPreview() {
+    const titleEl = document.getElementById('productMetaTitle');
+    const descEl = document.getElementById('productMetaDescription');
+    if (!titleEl || !descEl) return;
+
+    const tVal = String(titleEl.value || '').trim();
+    const dVal = String(descEl.value || '').trim();
+
+    const setCounter = (el, len, max) => {
+      if (!el) return;
+      el.textContent = `${len}/${max}`;
+      el.classList.toggle('seo-counter-over', len > max);
+    };
+    setCounter(document.getElementById('metaTitleCounter'), tVal.length, 60);
+    setCounter(document.getElementById('metaDescCounter'), dVal.length, 160);
+
+    const { autoTitle, autoDesc } = this.buildAutoSeo();
+    const tAuto = document.getElementById('metaTitleAuto');
+    const dAuto = document.getElementById('metaDescAuto');
+    if (tAuto) tAuto.textContent = tVal ? '' : `Авто: «${autoTitle}»`;
+    if (dAuto) dAuto.textContent = dVal ? '' : `Авто: «${autoDesc}»`;
   }
 
   prettyJson(value, fallback) {
@@ -3525,6 +3583,9 @@ class AdminApp {
     }
     if (tabName === 'documents') {
       this.renderDocumentsTable();
+    }
+    if (tabName === 'seo') {
+      this.updateSeoPreview();
     }
   }
 
