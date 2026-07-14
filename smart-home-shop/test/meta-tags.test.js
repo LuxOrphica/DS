@@ -127,3 +127,29 @@ test("unknown product falls back to site meta without breaking", async (t) => {
   assert.match(html, /<title>Делаем сети/);
   assert.match(html, /<div id="app">/);
 });
+
+test("robots.txt points at the sitemap and blocks admin/api", async (t) => {
+  const { baseUrl } = await startServer(t);
+  const res = await fetch(`${baseUrl}/robots.txt`);
+  assert.equal(res.status, 200);
+  assert.match(String(res.headers.get("content-type")), /text\/plain/);
+  const body = await res.text();
+  assert.match(body, /Disallow: \/admin/);
+  assert.match(body, /Disallow: \/api\//);
+  assert.match(body, /Sitemap: https?:\/\/[^/]+\/sitemap\.xml/);
+});
+
+test("sitemap.xml lists home, catalog, brands, categories and products", async (t) => {
+  const { baseUrl } = await startServer(t);
+  const res = await fetch(`${baseUrl}/sitemap.xml`);
+  assert.equal(res.status, 200);
+  assert.match(String(res.headers.get("content-type")), /xml/);
+  const xml = await res.text();
+  assert.match(xml, /<urlset\b/);
+  assert.match(xml, /<loc>[^<]*\/catalog<\/loc>/);
+  assert.match(xml, /<loc>[^<]*\/product\//);
+  assert.match(xml, /<loc>[^<]*\/brand\//);
+  // хотя бы столько же URL, сколько активных товаров
+  const locs = (xml.match(/<loc>/g) || []).length;
+  assert.ok(locs > 100, `expected many urls, got ${locs}`);
+});

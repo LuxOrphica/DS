@@ -19,6 +19,15 @@ function reqBaseUrl(req) {
   return `${proto}://${host}`;
 }
 
+function xmlEscape(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
 function injectMeta(html, headHtml) {
   const withoutTitle = html.replace(/[ \t]*<title>[\s\S]*?<\/title>\s*/i, "");
   if (/<\/head>/i.test(withoutTitle)) {
@@ -160,6 +169,58 @@ function registerMetaRoutes(app, { rootDir, loadProducts, ttlMs = 30_000 } = {})
         path: `/catalog/${encodeURIComponent(req.params.category)}`
       })
     );
+  });
+
+  // ── robots.txt / sitemap.xml (для индексирования) ────────────────────────────
+
+  app.get("/robots.txt", (req, res) => {
+    const baseUrl = reqBaseUrl(req);
+    const body = [
+      "User-agent: *",
+      "Allow: /",
+      "Disallow: /admin",
+      "Disallow: /admin-legacy",
+      "Disallow: /api/",
+      "",
+      `Sitemap: ${baseUrl}/sitemap.xml`,
+      ""
+    ].join("\n");
+    res.setHeader("Content-Type", "text/plain; charset=UTF-8");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.send(body);
+  });
+
+  app.get("/sitemap.xml", async (req, res) => {
+    const baseUrl = reqBaseUrl(req);
+    const snap = await getSnapshot().catch(() => null);
+
+    const urls = [
+      { loc: `${baseUrl}/`, priority: "1.0" },
+      { loc: `${baseUrl}/catalog`, priority: "0.9" },
+      { loc: `${baseUrl}/brands`, priority: "0.6" }
+    ];
+    if (snap) {
+      for (const brand of snap.brandCounts.keys()) {
+        urls.push({ loc: `${baseUrl}/brand/${encodeURIComponent(brand)}`, priority: "0.7" });
+      }
+      for (const category of snap.categoryCounts.keys()) {
+        urls.push({ loc: `${baseUrl}/catalog/${encodeURIComponent(category)}`, priority: "0.7" });
+      }
+      for (const product of snap.list) {
+        urls.push({ loc: `${baseUrl}/product/${encodeURIComponent(product.id)}`, priority: "0.8" });
+      }
+    }
+
+    const body = urls
+      .map((u) => `  <url>\n    <loc>${xmlEscape(u.loc)}</loc>\n    <priority>${u.priority}</priority>\n  </url>`)
+      .join("\n");
+    const xml =
+      `<?xml version="1.0" encoding="UTF-8"?>\n` +
+      `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`;
+
+    res.setHeader("Content-Type", "application/xml; charset=UTF-8");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.send(xml);
   });
 }
 
