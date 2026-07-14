@@ -67,6 +67,7 @@ const { registerPublicRoutes } = require("./routes/public-routes");
 const { registerAdminRoutes } = require("./routes/admin-routes");
 const { registerAdminSessionRoutes } = require("./routes/admin-session-routes");
 const { registerPageRoutes } = require("./routes/page-routes");
+const { registerMetaRoutes } = require("./routes/meta-routes");
 const { registerDbUploadRoute } = require("./routes/db-upload-route");
 const { createAdminAuthMiddleware } = require("./middleware/admin-auth");
 const { createAdminSessionStore } = require("./services/admin-session-store");
@@ -112,6 +113,10 @@ const corsOptions = createCorsOptions({
 
 app.use(createRequestContextMiddleware({ enableLogs: true }));
 app.use(createHelmetMiddleware({ reportOnly: cspReportOnly }));
+
+// Серверные метатеги для SPA-страниц (главная, товар, категория, бренд).
+// Регистрируется ДО express.static, чтобы перехватить "/" и отдать HTML с <head>.
+registerMetaRoutes(app, { rootDir: __dirname, loadProducts: listProducts });
 
 app.use(
   express.static(path.join(__dirname, "public"), {
