@@ -192,6 +192,10 @@ function createCatalogFiltersModule({
       where.push("COALESCE(p.is_extra, 0) = @isExtra");
       params.isExtra = Number(filters.is_extra);
     }
+    if (filters.isBrandFeatured === "1" || filters.isBrandFeatured === "0") {
+      where.push("COALESCE(p.is_brand_featured, 0) = @isBrandFeatured");
+      params.isBrandFeatured = Number(filters.isBrandFeatured);
+    }
     if (filters.minPrice !== undefined && filters.minPrice !== "") {
       where.push("COALESCE(p.price_rub, p.price, 0) >= @minPrice");
       params.minPrice = Number(filters.minPrice);

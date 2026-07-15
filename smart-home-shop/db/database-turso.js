@@ -765,6 +765,7 @@ const listAdminProductsAdvanced = async (filters = {}) => {
   if (filters.brandCategoryId) { where.push("EXISTS (SELECT 1 FROM product_brand_categories pbc WHERE pbc.product_id = p.id AND pbc.brand_category_id = :brandCategoryId)"); args.brandCategoryId = Number(filters.brandCategoryId); }
   if (filters.group) { where.push("LOWER(TRIM(p.group_name)) = LOWER(TRIM(:group))"); args.group = normalizeText(filters.group); }
   if (filters.status) { where.push("p.status = :status"); args.status = String(filters.status).trim(); }
+  if (filters.isBrandFeatured === "1" || filters.isBrandFeatured === "0") { where.push("COALESCE(p.is_brand_featured, 0) = :isBrandFeatured"); args.isBrandFeatured = Number(filters.isBrandFeatured); }
   const whereSql = `WHERE ${where.join(" AND ")}`;
   const totalRow = await q1(`SELECT COUNT(*) AS c FROM products p ${whereSql}`, omitKeys(args, ["limit", "offset"]));
   const products = (await q(`

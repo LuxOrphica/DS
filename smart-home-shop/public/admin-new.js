@@ -3040,6 +3040,9 @@ class AdminApp {
     let hasVariantsValue = '';
     let hasPhotosValue = '';
     let hasDocsValue = '';
+    let isBrandFeaturedValue = '';
+    if (combinedTypeValue === 'feat_1') isBrandFeaturedValue = '1';
+    if (combinedTypeValue === 'feat_0') isBrandFeaturedValue = '0';
     if (combinedTypeValue === 'var_1') variantConflictValue = '1';
     if (combinedTypeValue === 'var_0') variantConflictValue = '0';
     if (combinedTypeValue === 'hv_1') hasVariantsValue = '1';
@@ -3074,6 +3077,7 @@ class AdminApp {
       minPrice: headerPriceMin,
       maxPrice: headerPriceMax,
       is_extra: isExtraValue,
+      isBrandFeatured: isBrandFeaturedValue,
       variantConflict: variantConflictValue
     };
 

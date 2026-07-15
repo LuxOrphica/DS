@@ -595,9 +595,21 @@ function popularityScore(product) {
   return qty * 5 + rating * 10 + rev;
 }
 
+function isShowcaseProduct(product) {
+  return Number(product?.isBrandFeatured || product?.is_brand_featured || 0) === 1;
+}
+
 function pickPopularProducts(products, limit = 8) {
-  return (products || [])
-    .filter((p) => !isHiddenShowcaseCategory(getCatalogTopCategory(p)))
+  const eligible = (products || []).filter((p) => !isHiddenShowcaseCategory(getCatalogTopCategory(p)));
+
+  // Витрину задаёт владелец галочкой в админке. Если отмечен хотя бы один товар —
+  // показываем только отмеченные, иначе главная снова забьётся автоподбором.
+  // Запасной вариант (ничего не отмечено) — прежняя эвристика: popularityScore
+  // сейчас всегда 0 (таких данных в базе нет), поэтому по факту это сортировка по цене.
+  const showcase = eligible.filter(isShowcaseProduct);
+  const base = showcase.length ? showcase : eligible;
+
+  return base
     .slice()
     .sort((a, b) => {
       const scoreDelta = popularityScore(b) - popularityScore(a);
