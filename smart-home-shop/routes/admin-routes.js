@@ -17,6 +17,10 @@ function registerAdminRoutes(app, deps) {
     createBrandAdmin,
     updateBrandAdmin,
     deleteBrandAdmin,
+    listSitePagesAdmin,
+    createSitePage,
+    updateSitePage,
+    deleteSitePage,
     listFunctionalCategoriesAdmin,
     createFunctionalCategoryAdmin,
     updateFunctionalCategoryAdmin,
@@ -92,6 +96,27 @@ function registerAdminRoutes(app, deps) {
   app.delete("/api/admin/brands/:brandId", asyncRoute(async (req, res) => {
     const changes = await resolveValue(deleteBrandAdmin(req.params.brandId));
     if (!changes) return res.status(404).json({ success: false, error: "Brand not found" });
+    res.json({ success: true });
+  }));
+
+  app.get("/api/admin/pages", asyncRoute(async (req, res) => {
+    res.json({ pages: await resolveValue(listSitePagesAdmin()) });
+  }));
+
+  app.post("/api/admin/pages", asyncRoute(async (req, res) => {
+    const page = await resolveValue(createSitePage(req.body || {}));
+    res.status(201).json({ success: true, page });
+  }));
+
+  app.patch("/api/admin/pages/:pageId", asyncRoute(async (req, res) => {
+    const changes = await resolveValue(updateSitePage(req.params.pageId, req.body || {}));
+    if (!changes) return res.status(404).json({ success: false, error: "Page not found or unchanged" });
+    res.json({ success: true, changes });
+  }));
+
+  app.delete("/api/admin/pages/:pageId", asyncRoute(async (req, res) => {
+    const changes = await resolveValue(deleteSitePage(req.params.pageId));
+    if (!changes) return res.status(404).json({ success: false, error: "Page not found" });
     res.json({ success: true });
   }));
 

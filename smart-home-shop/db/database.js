@@ -614,6 +614,19 @@ function initSchema() {
       updated_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS site_pages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      slug TEXT NOT NULL UNIQUE,
+      title TEXT NOT NULL DEFAULT '',
+      subtitle TEXT DEFAULT '',
+      body_html TEXT DEFAULT '',
+      menu_group TEXT NOT NULL DEFAULT 'aux',
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      is_visible INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS functional_categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       parent_id INTEGER,
@@ -749,6 +762,8 @@ function initSchema() {
   addColumnIfMissing("orders", "updated_at", "TEXT DEFAULT ''");
   addColumnIfMissing("orders", "status_history_json", "TEXT DEFAULT '[]'");
   addColumnIfMissing("orders", "order_documents_json", "TEXT DEFAULT '[]'");
+
+  seedSitePages();
 
   // SQLite treats NULLs as distinct in UNIQUE(parent_id, name), so root categories
   // (parent_id = NULL) can accumulate duplicates over time. Deduplicate once and
@@ -945,6 +960,127 @@ function deleteBrandAdmin(brandId) {
   if (changes > 0) {
     writeAuditLog("delete", "brand", Number(brandId), { name: brand?.name || "" });
   }
+  return changes;
+}
+
+// ── Site pages (info/legal pages that also drive the auxiliary menu) ──────────
+
+const { SITE_PAGE_SEED } = require("./site-pages-seed");
+
+function seedSitePages() {
+  const count = db.prepare("SELECT COUNT(*) AS n FROM site_pages").get().n;
+  if (count > 0) return;
+  const now = new Date().toISOString();
+  const insert = db.prepare(`
+    INSERT INTO site_pages (slug, title, subtitle, body_html, menu_group, sort_order, is_visible, created_at, updated_at)
+    VALUES (@slug, @title, @subtitle, @bodyHtml, @menuGroup, @sortOrder, 1, @now, @now)
+  `);
+  const tx = db.transaction((rows) => {
+    for (const r of rows) insert.run({ ...r, now });
+  });
+  tx(SITE_PAGE_SEED);
+}
+
+function mapSitePageRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title || "",
+    subtitle: row.subtitle || "",
+    bodyHtml: row.body_html || "",
+    menuGroup: row.menu_group || "aux",
+    sortOrder: Number(row.sort_order || 0),
+    isVisible: Number(row.is_visible || 0) === 1,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+// Public: visible pages, used for the menus.
+function listSitePages() {
+  return db
+    .prepare(`SELECT * FROM site_pages WHERE is_visible = 1 ORDER BY sort_order ASC, title COLLATE NOCASE ASC`)
+    .all()
+    .map(mapSitePageRow);
+}
+
+// Admin: all pages.
+function listSitePagesAdmin() {
+  return db
+    .prepare(`SELECT * FROM site_pages ORDER BY menu_group ASC, sort_order ASC, title COLLATE NOCASE ASC`)
+    .all()
+    .map(mapSitePageRow);
+}
+
+function getSitePageBySlug(slug) {
+  const row = db.prepare(`SELECT * FROM site_pages WHERE slug = @slug`).get({ slug: String(slug || "").trim() });
+  return mapSitePageRow(row);
+}
+
+function normalizePageSlug(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9Ѐ-ӿ-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function createSitePage(payload = {}) {
+  const now = new Date().toISOString();
+  const slug = normalizePageSlug(payload.slug || payload.title || "");
+  if (!slug) throw new Error("slug or title is required");
+  const info = db.prepare(`
+    INSERT INTO site_pages (slug, title, subtitle, body_html, menu_group, sort_order, is_visible, created_at, updated_at)
+    VALUES (@slug, @title, @subtitle, @bodyHtml, @menuGroup, @sortOrder, @isVisible, @now, @now)
+  `).run({
+    slug,
+    title: String(payload.title || "").trim(),
+    subtitle: String(payload.subtitle || "").trim(),
+    bodyHtml: String(payload.bodyHtml || ""),
+    menuGroup: String(payload.menuGroup || "aux").trim() || "aux",
+    sortOrder: Number(payload.sortOrder || 0),
+    isVisible: payload.isVisible === false ? 0 : 1,
+    now
+  });
+  const page = getSitePageBySlug(slug);
+  writeAuditLog("create", "site_page", info.lastInsertRowid, { slug, title: page?.title || "" });
+  return page;
+}
+
+function updateSitePage(id, patch = {}) {
+  const map = {
+    slug: "slug",
+    title: "title",
+    subtitle: "subtitle",
+    bodyHtml: "body_html",
+    menuGroup: "menu_group",
+    sortOrder: "sort_order",
+    isVisible: "is_visible"
+  };
+  const setParts = [];
+  const params = { id: Number(id), updatedAt: new Date().toISOString() };
+  for (const [key, col] of Object.entries(map)) {
+    if (!Object.prototype.hasOwnProperty.call(patch, key)) continue;
+    setParts.push(`${col} = @${key}`);
+    if (key === "sortOrder") params[key] = Number(patch[key] || 0);
+    else if (key === "isVisible") params[key] = patch[key] ? 1 : 0;
+    else if (key === "slug") params[key] = normalizePageSlug(patch[key]);
+    else if (key === "bodyHtml") params[key] = String(patch[key] || "");
+    else params[key] = String(patch[key] || "").trim();
+  }
+  if (!setParts.length) return 0;
+  setParts.push("updated_at = @updatedAt");
+  const changes = db.prepare(`UPDATE site_pages SET ${setParts.join(", ")} WHERE id = @id`).run(params).changes;
+  if (changes > 0) writeAuditLog("update", "site_page", Number(id), { patch: { ...patch, bodyHtml: undefined } });
+  return changes;
+}
+
+function deleteSitePage(id) {
+  const page = db.prepare(`SELECT id, slug, title FROM site_pages WHERE id = @id`).get({ id: Number(id) });
+  const changes = db.prepare(`DELETE FROM site_pages WHERE id = @id`).run({ id: Number(id) }).changes;
+  if (changes > 0) writeAuditLog("delete", "site_page", Number(id), { slug: page?.slug || "", title: page?.title || "" });
   return changes;
 }
 
@@ -3613,6 +3749,12 @@ module.exports = {
   createBrandAdmin,
   updateBrandAdmin,
   deleteBrandAdmin,
+  listSitePages,
+  listSitePagesAdmin,
+  getSitePageBySlug,
+  createSitePage,
+  updateSitePage,
+  deleteSitePage,
   listFunctionalCategoriesAdmin,
   createFunctionalCategoryAdmin,
   updateFunctionalCategoryAdmin,

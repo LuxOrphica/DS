@@ -604,7 +604,7 @@ class AdminApp {
 
   getPageFromHash() {
     const raw = String(window.location.hash || '').replace(/^#\//, '').trim().toLowerCase();
-    if (['products', 'categories', 'orders', 'settings'].includes(raw)) return raw;
+    if (['products', 'categories', 'orders', 'settings', 'pages'].includes(raw)) return raw;
     return 'products';
   }
 
@@ -626,7 +626,7 @@ class AdminApp {
   }
 
   showMainPage(page) {
-    const ids = ['productsPage', 'categoriesPage', 'ordersPage', 'settingsPage'];
+    const ids = ['productsPage', 'categoriesPage', 'ordersPage', 'settingsPage', 'pagesPage'];
     ids.forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.style.display = (id === `${page}Page`) ? 'block' : 'none';
@@ -636,7 +636,7 @@ class AdminApp {
   }
 
   async navigate(page, replaceHash = false) {
-    const nextPage = ['products', 'categories', 'orders', 'settings'].includes(page) ? page : 'products';
+    const nextPage = ['products', 'categories', 'orders', 'settings', 'pages'].includes(page) ? page : 'products';
     this.currentPage = nextPage;
     this.setHash(nextPage, replaceHash);
     this.setActiveNav(nextPage);
@@ -657,10 +657,182 @@ class AdminApp {
       }
       if (nextPage === 'settings') {
         await this.renderSettingsPage();
+        return;
+      }
+      if (nextPage === 'pages') {
+        await this.renderPagesPage();
       }
     } catch (err) {
       console.error(`Navigation error (${nextPage}):`, err);
       this.showError(`Ошибка загрузки страницы: ${err.message || err}`);
+    }
+  }
+
+  // ── Text pages (info/legal pages + auxiliary menu) ─────────────────────────
+
+  async renderPagesPage() {
+    this.bindPagesEventsOnce();
+    this.hidePageEditor();
+    try {
+      const data = await this.fetchJson('/api/admin/pages');
+      this.sitePages = data.pages || [];
+      this.renderPagesList(this.sitePages);
+    } catch (err) {
+      this.showError(`Не удалось загрузить страницы: ${err.message || err}`);
+    }
+  }
+
+  renderPagesList(pages) {
+    const body = document.getElementById('pagesTableBody');
+    const count = document.getElementById('pagesCount');
+    if (count) count.textContent = `${pages.length} стр.`;
+    if (!body) return;
+    if (!pages.length) {
+      body.innerHTML = '<tr><td colspan="6" class="variants-empty">Страниц пока нет</td></tr>';
+      return;
+    }
+    const groupLabel = { aux: 'Вспомогательное', main: 'Главное', none: 'Скрыто' };
+    body.innerHTML = pages.map((p) => `
+      <tr>
+        <td>${this.escapeHtml(p.title || '')}</td>
+        <td><code>/${this.escapeHtml(p.slug || '')}</code></td>
+        <td>${this.escapeHtml(groupLabel[p.menuGroup] || p.menuGroup || '')}</td>
+        <td>${Number(p.sortOrder || 0)}</td>
+        <td>${p.isVisible ? 'да' : '—'}</td>
+        <td>
+          <button class="btn-action btn-action-icon" data-page-action="edit" data-id="${p.id}" title="Редактировать">edit</button>
+          <button class="btn-action btn-action-icon btn-action-danger" data-page-action="delete" data-id="${p.id}" title="Удалить">delete</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  bindPagesEventsOnce() {
+    if (this._pagesBound) return;
+    this._pagesBound = true;
+
+    const createBtn = document.getElementById('createPageBtn');
+    if (createBtn) createBtn.addEventListener('click', () => this.openPageEditor(null));
+
+    const saveBtn = document.getElementById('savePageBtn');
+    if (saveBtn) saveBtn.addEventListener('click', () => this.savePage());
+
+    const cancelBtn = document.getElementById('cancelPageBtn');
+    if (cancelBtn) cancelBtn.addEventListener('click', () => this.hidePageEditor());
+
+    const tbody = document.getElementById('pagesTableBody');
+    if (tbody) {
+      tbody.addEventListener('click', (event) => {
+        const btn = event.target.closest('button[data-page-action]');
+        if (!btn) return;
+        const id = Number(btn.dataset.id);
+        const action = btn.dataset.pageAction;
+        if (action === 'edit') {
+          const page = (this.sitePages || []).find((p) => Number(p.id) === id);
+          if (page) this.openPageEditor(page);
+        } else if (action === 'delete') {
+          const page = (this.sitePages || []).find((p) => Number(p.id) === id);
+          this.deletePage(id, page?.title || '');
+        }
+      });
+    }
+
+    // Rich-text toolbar: keep selection (mousedown preventDefault), run command on click.
+    const toolbar = document.getElementById('pageRteToolbar');
+    if (toolbar) {
+      toolbar.addEventListener('mousedown', (event) => {
+        if (event.target.closest('.rte-btn')) event.preventDefault();
+      });
+      toolbar.addEventListener('click', (event) => {
+        const btn = event.target.closest('.rte-btn');
+        if (!btn) return;
+        this.rteExec(btn.dataset.cmd, btn.dataset.value);
+      });
+    }
+  }
+
+  rteExec(cmd, value) {
+    const editor = document.getElementById('pageBodyEditor');
+    if (editor) editor.focus();
+    if (cmd === 'createLink') {
+      const url = window.prompt('Адрес ссылки (например, mailto:sale@delaemseti.ru или https://…):', 'https://');
+      if (!url) return;
+      document.execCommand('createLink', false, url);
+      return;
+    }
+    if (cmd === 'formatBlock') {
+      document.execCommand('formatBlock', false, value || 'h3');
+      return;
+    }
+    document.execCommand(cmd, false, null);
+  }
+
+  openPageEditor(page) {
+    const card = document.getElementById('pageEditorCard');
+    document.getElementById('pageEditId').value = page ? String(page.id) : '';
+    document.getElementById('pageEditorTitle').textContent = page ? `Редактирование: ${page.title || ''}` : 'Новая страница';
+    document.getElementById('pageTitle').value = page?.title || '';
+    document.getElementById('pageSlug').value = page?.slug || '';
+    document.getElementById('pageSubtitle').value = page?.subtitle || '';
+    document.getElementById('pageMenuGroup').value = page?.menuGroup || 'aux';
+    document.getElementById('pageSortOrder').value = Number(page?.sortOrder || 0);
+    document.getElementById('pageIsVisible').checked = page ? Boolean(page.isVisible) : true;
+    document.getElementById('pageBodyEditor').innerHTML = page?.bodyHtml || '';
+    if (card) card.style.display = 'block';
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  hidePageEditor() {
+    const card = document.getElementById('pageEditorCard');
+    if (card) card.style.display = 'none';
+  }
+
+  async savePage() {
+    const id = String(document.getElementById('pageEditId').value || '').trim();
+    const payload = {
+      title: String(document.getElementById('pageTitle').value || '').trim(),
+      slug: String(document.getElementById('pageSlug').value || '').trim(),
+      subtitle: String(document.getElementById('pageSubtitle').value || '').trim(),
+      menuGroup: String(document.getElementById('pageMenuGroup').value || 'aux'),
+      sortOrder: Number(document.getElementById('pageSortOrder').value || 0),
+      isVisible: document.getElementById('pageIsVisible').checked,
+      bodyHtml: document.getElementById('pageBodyEditor').innerHTML || ''
+    };
+    if (!payload.title && !payload.slug) {
+      this.showError('Укажите заголовок или адрес страницы');
+      return;
+    }
+    try {
+      if (id) {
+        await this.fetchJson(`/api/admin/pages/${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        this.showSuccess('Страница сохранена');
+      } else {
+        await this.fetchJson('/api/admin/pages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        this.showSuccess('Страница создана');
+      }
+      this.hidePageEditor();
+      await this.renderPagesPage();
+    } catch (err) {
+      this.showError(`Не удалось сохранить: ${err.message || err}`);
+    }
+  }
+
+  async deletePage(id, title) {
+    if (!window.confirm(`Удалить страницу «${title}»? Ссылка исчезнет из меню.`)) return;
+    try {
+      await this.fetchJson(`/api/admin/pages/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      this.showSuccess('Страница удалена');
+      await this.renderPagesPage();
+    } catch (err) {
+      this.showError(`Не удалось удалить: ${err.message || err}`);
     }
   }
 

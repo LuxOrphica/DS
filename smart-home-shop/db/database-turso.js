@@ -8,6 +8,7 @@ const {
   normalizeProtocolValue, normalizeScalar, normalizeTechnicalPatchValues,
   normalizeSystemType, normalizeText
 } = require("./normalization");
+const { SITE_PAGE_SEED } = require("./site-pages-seed");
 
 // Client
 const turso = createClient({
@@ -160,8 +161,111 @@ function sanitizeProductRow(row) {
 async function initSchema() {
   // Schema already exists in Turso; just verify connection.
   await turso.execute("SELECT 1");
+  // site_pages is a newer table — create + seed it if missing (idempotent).
+  await turso.execute(`
+    CREATE TABLE IF NOT EXISTS site_pages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      slug TEXT NOT NULL UNIQUE,
+      title TEXT NOT NULL DEFAULT '',
+      subtitle TEXT DEFAULT '',
+      body_html TEXT DEFAULT '',
+      menu_group TEXT NOT NULL DEFAULT 'aux',
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      is_visible INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )
+  `);
+  await seedSitePages();
   console.log("Turso: connected, schema assumed ready.");
 }
+
+async function seedSitePages() {
+  const row = await q1("SELECT COUNT(*) AS n FROM site_pages");
+  if (Number(row?.n || 0) > 0) return;
+  const now = new Date().toISOString();
+  for (const p of SITE_PAGE_SEED) {
+    await run(
+      `INSERT INTO site_pages (slug, title, subtitle, body_html, menu_group, sort_order, is_visible, created_at, updated_at)
+       VALUES (:slug, :title, :subtitle, :bodyHtml, :menuGroup, :sortOrder, 1, :now, :now)`,
+      { slug: p.slug, title: p.title, subtitle: p.subtitle || "", bodyHtml: p.bodyHtml,
+        menuGroup: p.menuGroup || "aux", sortOrder: Number(p.sortOrder || 0), now }
+    );
+  }
+}
+
+function mapSitePageRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title || "",
+    subtitle: row.subtitle || "",
+    bodyHtml: row.body_html || "",
+    menuGroup: row.menu_group || "aux",
+    sortOrder: Number(row.sort_order || 0),
+    isVisible: Number(row.is_visible || 0) === 1,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+function normalizePageSlug(value) {
+  return String(value || "").trim().toLowerCase()
+    .replace(/[^a-z0-9Ѐ-ӿ-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+}
+
+const listSitePages = async () =>
+  (await q("SELECT * FROM site_pages WHERE is_visible = 1 ORDER BY sort_order ASC, title COLLATE NOCASE ASC")).map(mapSitePageRow);
+
+const listSitePagesAdmin = async () =>
+  (await q("SELECT * FROM site_pages ORDER BY menu_group ASC, sort_order ASC, title COLLATE NOCASE ASC")).map(mapSitePageRow);
+
+const getSitePageBySlug = async (slug) =>
+  mapSitePageRow(await q1("SELECT * FROM site_pages WHERE slug = :slug", { slug: String(slug || "").trim() }));
+
+const createSitePage = async (payload = {}) => {
+  const now = new Date().toISOString();
+  const slug = normalizePageSlug(payload.slug || payload.title || "");
+  if (!slug) throw new Error("slug or title is required");
+  await run(
+    `INSERT INTO site_pages (slug, title, subtitle, body_html, menu_group, sort_order, is_visible, created_at, updated_at)
+     VALUES (:slug, :title, :subtitle, :bodyHtml, :menuGroup, :sortOrder, :isVisible, :now, :now)`,
+    {
+      slug,
+      title: String(payload.title || "").trim(),
+      subtitle: String(payload.subtitle || "").trim(),
+      bodyHtml: String(payload.bodyHtml || ""),
+      menuGroup: String(payload.menuGroup || "aux").trim() || "aux",
+      sortOrder: Number(payload.sortOrder || 0),
+      isVisible: payload.isVisible === false ? 0 : 1,
+      now
+    }
+  );
+  const page = await getSitePageBySlug(slug);
+  await writeAuditLog("create", "site_page", page?.id, { slug, title: page?.title || "" });
+  return page;
+};
+
+const updateSitePage = async (id, patch = {}) => {
+  const changes = await updateByMap("site_pages", "id", id, patch, {
+    slug: "slug", title: "title", subtitle: "subtitle", bodyHtml: "body_html",
+    menuGroup: "menu_group", sortOrder: "sort_order", isVisible: "is_visible"
+  }, {
+    slug: (v) => normalizePageSlug(v),
+    bodyHtml: (v) => String(v || ""),
+    sortOrder: (v) => Number(v || 0),
+    isVisible: (v) => (v ? 1 : 0)
+  });
+  if (changes) await writeAuditLog("update", "site_page", id, { patch: { ...patch, bodyHtml: undefined } });
+  return changes;
+};
+
+const deleteSitePage = async (id) => {
+  const changes = rowsAffected(await run("DELETE FROM site_pages WHERE id = :id", { id: Number(id) }));
+  if (changes) await writeAuditLog("delete", "site_page", id, {});
+  return changes;
+};
 
 // Exchange rates
 async function getLatestExchangeRate(base = "EUR", quote = "RUB") {
@@ -1092,6 +1196,7 @@ module.exports = {
   listAdminProductsAdvanced,
   listAdminFilters,
   listBrandsAdmin, createBrandAdmin, updateBrandAdmin, deleteBrandAdmin,
+  listSitePages, listSitePagesAdmin, getSitePageBySlug, createSitePage, updateSitePage, deleteSitePage,
   listFunctionalCategoriesAdmin, createFunctionalCategoryAdmin,
   updateFunctionalCategoryAdmin, deleteFunctionalCategoryAdmin,
   listBrandCategoriesAdmin, listBrandNativeCategoriesAdmin,

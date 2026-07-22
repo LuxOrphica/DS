@@ -11,6 +11,12 @@ const {
   createBrandAdmin,
   updateBrandAdmin,
   deleteBrandAdmin,
+  listSitePages,
+  listSitePagesAdmin,
+  getSitePageBySlug,
+  createSitePage,
+  updateSitePage,
+  deleteSitePage,
   listFunctionalCategoriesAdmin,
   createFunctionalCategoryAdmin,
   updateFunctionalCategoryAdmin,
@@ -171,7 +177,9 @@ registerPublicRoutes(app, {
   listProducts,
   createOrder,
   listPublicOrdersByIds,
-  listPublicOrdersByLookup
+  listPublicOrdersByLookup,
+  listSitePages,
+  getSitePageBySlug
 });
 
 registerAdminSessionRoutes(app, {
@@ -198,6 +206,10 @@ registerAdminRoutes(app, {
   createBrandAdmin,
   updateBrandAdmin,
   deleteBrandAdmin,
+  listSitePagesAdmin,
+  createSitePage,
+  updateSitePage,
+  deleteSitePage,
   listFunctionalCategoriesAdmin,
   createFunctionalCategoryAdmin,
   updateFunctionalCategoryAdmin,

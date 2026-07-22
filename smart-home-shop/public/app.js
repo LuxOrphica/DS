@@ -535,58 +535,53 @@ function renderStaticPage(title, subtitle, bodyHtml) {
   `);
 }
 
-const LEGAL_PAGE_CONFIG = {
-  "offer": {
-    title: "Публичная оферта",
-    subtitle: "Условия заключения договора",
-    path: "legal/offer.html"
-  },
-  "privacy": {
-    title: "Политика персональных данных",
-    subtitle: "Правила обработки и хранения данных",
-    path: "legal/privacy.html"
-  },
-  "payment-delivery": {
-    title: "Оплата и доставка",
-    subtitle: "Условия оплаты и отгрузки",
-    path: "legal/payment-delivery.html"
-  },
-  "returns-exchange": {
-    title: "Возврат и обмен",
-    subtitle: "Условия возврата и гарантийных обращений",
-    path: "legal/returns-exchange.html"
-  },
-  "requisites": {
-    title: "Реквизиты",
-    subtitle: "Юридическая и платежная информация",
-    path: "legal/requisites.html"
+// Info pages (offer, privacy, contacts, design, …) are managed from the admin
+// and stored in the DB; the auxiliary/main menus are built from the same list.
+let sitePagesMenu = [];
+
+async function loadSitePagesMenu() {
+  try {
+    const res = await fetch("/api/pages", { cache: "no-store" });
+    if (!res.ok) return;
+    const data = await res.json();
+    sitePagesMenu = Array.isArray(data.pages) ? data.pages : [];
+    renderSiteMenus();
+  } catch (error) {
+    console.error("Failed to load site pages menu", error);
   }
-};
+}
 
-function renderLegalPage(slug) {
-  const config = LEGAL_PAGE_CONFIG[String(slug || "").trim()];
-  if (!config) return false;
+function renderSiteMenus() {
+  const esc = (v) => String(v == null ? "" : v)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const linksFor = (group) => sitePagesMenu
+    .filter((p) => (p.menuGroup || "aux") === group)
+    .map((p) => `<a href="/${encodeURIComponent(p.slug)}">${esc(p.title || p.slug)}</a>`)
+    .join("");
 
-  renderStaticPage(
-    config.title,
-    config.subtitle,
-    `<p class="note">Загрузка...</p>`
-  );
+  const mainEl = document.getElementById("mainNavPagesMain");
+  if (mainEl) mainEl.innerHTML = linksFor("main");
+  const auxEl = document.getElementById("mainNavPagesAux");
+  if (auxEl) auxEl.innerHTML = linksFor("aux");
+  const footerEl = document.getElementById("footerPagesAux");
+  if (footerEl) footerEl.innerHTML = linksFor("aux");
+}
 
-  const legalUrl = new URL(config.path, new URL("./", import.meta.url));
-  fetch(legalUrl, { cache: "no-store" })
+function renderDbPage(slug) {
+  renderStaticPage("Загрузка…", "", `<p class="note">Загрузка...</p>`);
+  fetch(`/api/pages/${encodeURIComponent(slug)}`, { cache: "no-store" })
     .then((response) => {
-      if (!response.ok) throw new Error(`Failed to load legal page: ${response.status}`);
-      return response.text();
+      if (!response.ok) throw new Error(`Failed to load page: ${response.status}`);
+      return response.json();
     })
-    .then((html) => {
-      renderStaticPage(config.title, config.subtitle, html);
+    .then((page) => {
+      renderStaticPage(page.title || "", page.subtitle || "", page.bodyHtml || "");
     })
     .catch((error) => {
-      console.error("Failed to render legal page", slug, error);
+      console.error("Failed to render page", slug, error);
       renderStaticPage(
-        config.title,
-        config.subtitle,
+        "Страница недоступна",
+        "",
         `<p class="note">Страница временно недоступна. Пожалуйста, напишите на <a href="mailto:sale@delaemseti.ru">sale@delaemseti.ru</a>.</p>`
       );
     });
@@ -961,53 +956,11 @@ function renderRoute() {
     return;
   }
 
-  if (parts[0] === "design") {
-    renderStaticPage(
-      "Проектирование",
-      "Проектные услуги",
-      `
-        <p>ПроектируеИ? инженерные решения под задачи частных доИ?ов и коИ?И?ерческих объектов: от концепции до готовой спецификации оборудования.</p>
-        <ul>
-          <li>Аудит задачи и подбор архитектуры систеИ?ы.</li>
-          <li>Подготовка спецификации и ведоИ?ости по оборудованию.</li>
-          <li>Подготовка сИ?еты и графика поставок.</li>
-        </ul>
-        <p class="note">Для старта проекта напишите в раздел контактов и приложите план поИ?ещения или ТЗ.</p>
-      `
-    );
-    return;
-  }
-  if (parts[0] === "delivery") {
-    renderStaticPage(
-      "Доставка",
-      "Условия поставки",
-      `
-        <p>Организуем доставку по Москве и регионам России. Срок и стоимость рассчитываются отдельно по составу заказа и адресу.</p>
-        <ul>
-          <li>Самовывоз по предварительному согласованию времени выдачи.</li>
-          <li>Курьерская доставка по городу в рабочие дни.</li>
-          <li>Отправка транспортной компанией по РФ.</li>
-        </ul>
-        <p>После оформления заказа менеджер свяжется для подтверждения сроков, стоимости и способа оплаты.</p>
-      `
-    );
-    return;
-  }
-  if (LEGAL_PAGE_CONFIG[parts[0]]) {
-    renderLegalPage(parts[0]);
-    return;
-  }
-  if (parts[0] === "contacts") {
-    renderStaticPage(
-      "Контакты",
-      "Свяжитесь с нами",
-      `
-        <p><strong>Телефон:</strong> +7 965 277 5166</p>
-        <p><strong>Email:</strong> sale@delaemseti.ru</p>
-        <p><strong>Режим работы:</strong> пн-пт, 10:00-19:00 (мск)</p>
-        <p class="note">Если нужна консультация по подбору оборудования, укажите бренд, артикул или задачу проекта.</p>
-      `
-    );
+  // Any remaining single-segment path is treated as an info page (offer, contacts,
+  // design, or a custom page from the admin). Unknown slugs 404 gracefully inside
+  // renderDbPage. Reserved routes (catalog, product, …) already returned above.
+  if (parts[0] && !parts[1]) {
+    renderDbPage(parts[0]);
     return;
   }
   if (location.pathname === "/" || location.pathname === "") {
@@ -1052,6 +1005,7 @@ async function init() {
     if (miniCartEl) miniCartEl.classList.add("hidden");
     setupMobileMenu();
     setupCatalogMegaMenu();
+    loadSitePagesMenu(); // fire-and-forget: menu fills in shortly, doesn't block first paint
     safeRenderRoute();
 
     // Global app event handlers

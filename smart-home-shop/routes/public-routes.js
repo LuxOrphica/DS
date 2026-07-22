@@ -113,7 +113,9 @@ function registerPublicRoutes(app, deps) {
     listProducts,
     createOrder,
     listPublicOrdersByIds,
-    listPublicOrdersByLookup
+    listPublicOrdersByLookup,
+    listSitePages,
+    getSitePageBySlug
   } = deps;
 
   app.get("/api/health", async (req, res) => {
@@ -146,6 +148,41 @@ function registerPublicRoutes(app, deps) {
   app.get("/api/products", async (req, res) => {
     try {
       res.json(await Promise.resolve(listProducts()));
+    } catch (err) {
+      res.status(500).json({ ok: false, error: String(err.message || err) });
+    }
+  });
+
+  // Visible info pages — drives the site's auxiliary/main menus (menu labels only).
+  app.get("/api/pages", async (req, res) => {
+    try {
+      const pages = (await Promise.resolve(listSitePages())) || [];
+      res.json({
+        pages: pages.map((p) => ({
+          slug: p.slug,
+          title: p.title,
+          menuGroup: p.menuGroup,
+          sortOrder: p.sortOrder
+        }))
+      });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: String(err.message || err) });
+    }
+  });
+
+  // Full content of a single page.
+  app.get("/api/pages/:slug", async (req, res) => {
+    try {
+      const page = await Promise.resolve(getSitePageBySlug(req.params.slug));
+      if (!page || !page.isVisible) {
+        return res.status(404).json({ ok: false, error: "page not found" });
+      }
+      res.json({
+        slug: page.slug,
+        title: page.title,
+        subtitle: page.subtitle,
+        bodyHtml: page.bodyHtml
+      });
     } catch (err) {
       res.status(500).json({ ok: false, error: String(err.message || err) });
     }
